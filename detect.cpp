@@ -15,9 +15,12 @@ float LINE_CROSS_DEGREE;         // 直交とみなす最小角度
 float CENTER_WIDTH;               // 画像中心部の幅
 float CENTER_HEIGHT;              // 画像中心部の高さ
 
+int POINT_IN_SECTION;             // 画像の4箇所それぞれが含む候補点の数
+
 const float EPSILON = 0.0;  // 1e-7
 const float F_PI = 3.1415926f;
 const float SQRT2 = 1.4142135f;
+const float INF = 1e7;
 
 cv::Size img_size;
 
@@ -38,7 +41,9 @@ int main(int argc, char** argv) {
   double start = double(cv::getTickCount());
 
   init(image);
-  // exit(0);
+  cv::imshow("original image", image);
+
+  cv::Mat processed;
 
   // Create FLD detector
   int length_threshold = 20;
@@ -63,46 +68,129 @@ int main(int argc, char** argv) {
   printf("labels_num = %d\n", labels_num);
 
   // Show found lines
-  cv::Mat drawnLines;
-  // fld->drawSegments(drawnLines, lines);
-  draw_labeled_lines(image, drawnLines, lines, labels, labels_num);
-  cv::imshow("line detected", drawnLines);
+  draw_labeled_lines(image, processed, lines, labels, labels_num);
+  cv::imshow("line detected", processed);
 
   vector<Segment> segments;
   get_segments(lines, segments, labels, labels_num);
-  cout << "num of segments = " << segments.size() << endl;
-  // cv::Mat mergedLines;
-  // draw_lines(image, mergedLines, segments);
-  // cv::imshow("line merged", mergedLines);
-  
+  cout << "num of segments: " << segments.size() << " => ";
   remove_central_segments(segments);
-  cout << "num of segments = " << segments.size() << endl;
-  cv::Mat refinedLines;
-  draw_lines(image, refinedLines, segments);
-  cv::imshow("line refined", refinedLines);
+  cout << segments.size() << endl;
 
-  vector<cv::Point2f> inter_points;
-  for (int i = 0; i < segments.size(); i++) {
-    for (int j = i + 1; j < segments.size(); j++) {
-      cv::Point2f inter_point;
-      int type = segments[i].intersection(segments[j], inter_point);
-      if (type < 0) continue;
-      inter_points.push_back(inter_point);
+  draw_lines(image, processed, segments);
+  cv::imshow("line refined", processed);
+
+  vector<Intersection> intersections;
+  Intersection::get_intersections(segments, intersections);
+
+  cv::cvtColor(image, processed, cv::COLOR_GRAY2BGR);
+  sort(intersections.begin(), intersections.end(), 
+        [](const Intersection& left, const Intersection& right) {
+          return left.get_score() > right.get_score();
+        });
+
+  for (int i = 0; i < intersections.size() && i < 40; i++) {
+    Intersection& inter = intersections[i];
+    cv::Point2f cross_point = inter.get_cross_point();
+    cv::putText(processed, to_string(inter.m_id), cross_point, cv::FONT_HERSHEY_PLAIN,
+                   1.0, cv::Scalar(255, 0, 0));
+    cv::circle(processed, cross_point, 2, cv::Scalar(255, 0, 0), -1);
+    printf("%s", inter.m_description);
+  }
+  cout << "num of intersections " << intersections.size() << endl;
+  // cv::imshow("intersections detected", processed);
+
+  vector<Intersection> inters_lt, inters_rt, inters_lb, inters_rb;
+  for (int i = 0; i < intersections.size(); i++) {
+    Intersection& inter = intersections[i];
+    if (inter.is_top()) {
+      if (inter.is_left() && inters_lt.size() < POINT_IN_SECTION) {
+        inters_lt.push_back(inter);
+      } else if (inter.is_right() && inters_rt.size() < POINT_IN_SECTION) {
+        inters_rt.push_back(inter);
+      }
+    } else {
+      if (inter.is_left() && inters_lb.size() < POINT_IN_SECTION) {
+        inters_lb.push_back(inter);
+      } else if (inter.is_right() && inters_rb.size() < POINT_IN_SECTION) {
+        inters_rb.push_back(inter);
+      }
     }
   }
-  cv::Mat interPoints;
-  cv::cvtColor(image, interPoints, cv::COLOR_GRAY2BGR);
-  for (int i = 0; i < inter_points.size(); i++) {
-    cv::circle(interPoints, inter_points[i], 3, cv::Scalar(255, 0, 0), -1);
+
+  vector<vector<int> > indice;
+  get_combi_indice(inters_lt.size(), inters_rt.size(),
+                        inters_lb.size(), inters_rb.size(), indice);
+
+  // どれか1つでも空の場合はエラー
+  assert(!inters_lt.empty());
+  assert(!inters_lt.empty());
+  assert(!inters_lt.empty());
+  assert(!inters_lt.empty());
+  float best_score = -INF;
+  int idx_lt, idx_rt, idx_lb, idx_rb;
+  for (int i = 0; i < indice.size(); i++) {
+    Intersection& inter_lt = inters_lt[indice[i][0]];
+    Intersection& inter_rt = inters_rt[indice[i][1]];
+    Intersection& inter_lb = inters_lb[indice[i][2]];
+    Intersection& inter_rb = inters_rb[indice[i][3]];
+
+    float score = (inter_lt.get_score() + inter_rt.get_score()
+                    + inter_lb.get_score() + inter_rb.get_score()) / 4;
+
+    cv::Point2f v1 = inter_rt.get_cross_point() - inter_lt.get_cross_point();
+    cv::Point2f v2 = inter_rb.get_cross_point() - inter_rt.get_cross_point();
+    cv::Point2f v3 = inter_lb.get_cross_point() - inter_rb.get_cross_point();
+    cv::Point2f v4 = inter_lt.get_cross_point() - inter_lb.get_cross_point();
+    float deg1 = acosf(v4.dot(v1) / cv::norm(v4) / cv::norm(v1));
+    float deg2 = acosf(v1.dot(v2) / cv::norm(v1) / cv::norm(v2));
+    float deg3 = acosf(v2.dot(v3) / cv::norm(v2) / cv::norm(v3));
+    float deg4 = acosf(v3.dot(v4) / cv::norm(v3) / cv::norm(v4));
+
+    float weight = 500;
+    score -= (powf(angle_sub(deg1, F_PI/2), 2) + powf(angle_sub(deg2, F_PI/2), 2)
+              + powf(angle_sub(deg1, F_PI/2), 2) + powf(angle_sub(deg2, F_PI/2), 2)) * weight;
+
+    if (best_score < score) {
+      best_score = score;
+      idx_lt = indice[i][0];
+      idx_rt = indice[i][1];
+      idx_lb = indice[i][2];
+      idx_rb = indice[i][3];
+    }
+    printf("(%d, %d, %d, %d) : %f\n", inter_lt.m_id, inter_rt.m_id, inter_lb.m_id, inter_rb.m_id, score);
   }
-  cout << "num of intersections " << inter_points.size() << endl;
-  cv::imshow("intersections detected", interPoints);
+
+  cv::cvtColor(image, processed, cv::COLOR_GRAY2BGR);
+  cv::circle(processed, inters_lt[idx_lt].get_cross_point(), 3, cv::Scalar(0, 0, 255), -1);
+  cv::circle(processed, inters_rt[idx_rt].get_cross_point(), 3, cv::Scalar(0, 0, 255), -1);
+  cv::circle(processed, inters_lb[idx_lb].get_cross_point(), 3, cv::Scalar(0, 0, 255), -1);
+  cv::circle(processed, inters_rb[idx_rb].get_cross_point(), 3, cv::Scalar(0, 0, 255), -1);
+  cv::line(processed, inters_lt[idx_lt].get_cross_point(), inters_rt[idx_rt].get_cross_point(), cv::Scalar(0, 0, 255));
+  cv::line(processed, inters_rt[idx_rt].get_cross_point(), inters_rb[idx_rb].get_cross_point(), cv::Scalar(0, 0, 255));
+  cv::line(processed, inters_rb[idx_rb].get_cross_point(), inters_lb[idx_lb].get_cross_point(), cv::Scalar(0, 0, 255));
+  cv::line(processed, inters_lb[idx_lb].get_cross_point(), inters_lt[idx_lt].get_cross_point(), cv::Scalar(0, 0, 255));
+
+  printf("best score: %f  (%d, %d, %d, %d)\n", best_score,
+      inters_lt[idx_lt].m_id,  inters_rt[idx_rt].m_id, inters_lb[idx_lb].m_id, inters_rb[idx_rb].m_id);
+  cv::imshow("rectangle detected", processed);
+
+  vector<cv::Point2f> src_points = {inters_lt[idx_lt].get_cross_point(),
+                                          inters_rt[idx_rt].get_cross_point(),
+                                          inters_lb[idx_lb].get_cross_point(),
+                                          inters_rb[idx_rb].get_cross_point()};
+  vector<cv::Point2f> dst_points = {cv::Point2f(0, 0),
+                                          cv::Point2f(img_size.width, 0),
+                                          cv::Point2f(0, img_size.height),
+                                          cv::Point2f(img_size.width, img_size.height)};
+  cv::Mat M = findHomography(src_points, dst_points, cv::RANSAC, 3);
+  cv::warpPerspective(image, processed, M, img_size);
+  cv::imshow("homography result", processed);
 
   double duration_ms = (double(cv::getTickCount()) - start) * 1000 / cv::getTickFrequency();
   cout << "It took " << duration_ms << " ms." << endl;
 
   cv::waitKey();
-
 
   return 0;
 }
