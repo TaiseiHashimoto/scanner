@@ -47,18 +47,21 @@ void Intersection::get_intersections(vector<Segment>& segments, vector<Intersect
 			Segment seg_hor = segments[i], seg_ver = segments[j];
 			if (seg_hor.is_vertical()) swap(seg_hor, seg_ver);
 
+			// 交わる角度が小さいものは除外
 			float cross_degree = fabs(angle_sub(seg_hor.m_theta, seg_ver.m_theta));
 		  if (cross_degree * 180 < LINE_CROSS_DEGREE * F_PI) continue;
 
+		  // 交点を求める
 		  cv::Point2f x = seg_ver.m_pe1 - seg_hor.m_pe1;
 		  cv::Point2f d1 = seg_hor.m_pe2 - seg_hor.m_pe1;
 		  cv::Point2f d2 = seg_ver.m_pe2 - seg_ver.m_pe1;
 		  float t1 = (x.x * d2.y - x.y * d2.x) / (d1.x * d2.y - d1.y * d2.x);
 		  cv::Point2f cross_point = seg_hor.m_pe1 + d1 * t1;
 
+		  // 位置関係を求める
 		  enum Horizontal pos_hor;
 		  enum Vertical pos_ver;
-
+		  
 		  if (cross_point.x < seg_hor.m_p1.x + LINE_INCLUDE_DISTANCE) {
 		  	if (cross_point.x > img_size.width / 2 - CENTER_WIDTH / 2) continue;	
 		  	pos_hor = LEFT;

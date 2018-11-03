@@ -64,6 +64,7 @@ public:
 void init(cv::Mat& image);
 float angle_sub(float theta1, float theta2);
 void get_segments(std::vector<cv::Vec4f>& lines, std::vector<Segment>& segments, std::vector<int>& labels, int labels_num);
+void remove_central_lines(std::vector<cv::Vec4f>& lines);
 void remove_central_segments(std::vector<Segment>& segments);
 void draw_lines(cv::Mat& src, cv::Mat& dst, std::vector<Segment>& segments);
 void draw_labeled_lines(cv::Mat& src, cv::Mat& dst, std::vector<cv::Vec4f>& lines, std::vector<int> labels, int labels_num);

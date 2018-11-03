@@ -10,13 +10,13 @@ void init(cv::Mat& image) {
   img_size = image.size();
   cout << img_size << endl;
   int len_avg = (img_size.width + img_size.height) / 2;
-  LINE_EQUAL_DEGREE = 5;
-  LINE_EQUAL_DISTANCE = len_avg * 0.003;    // 500 => 1.5
+  LINE_EQUAL_DEGREE = 3;
+  LINE_EQUAL_DISTANCE = len_avg * 0.005;    // 500 =>  2.5
   POINT_EQUAL_DISTANCE = len_avg * 0.006;   // 500 => 3.0
-  LINE_INCLUDE_DISTANCE = len_avg * 0.006;  // 500 => 3.0
-  LINE_CROSS_DEGREE = 80;
-  CENTER_WIDTH = img_size.width * 0.5;
-  CENTER_HEIGHT = img_size.height * 0.5;
+  LINE_INCLUDE_DISTANCE = len_avg * 0.03;  // 500 => 15.0
+  LINE_CROSS_DEGREE = 60;
+  CENTER_WIDTH = img_size.width * 0.6;
+  CENTER_HEIGHT = img_size.height * 0.6;
 
   POINT_IN_SECTION = 5;
 
@@ -39,7 +39,6 @@ float angle_sub(float theta1, float theta2) {
 }
 
 void get_segments(vector<cv::Vec4f>& lines, vector<Segment>& segments, vector<int>& labels, int labels_num) {
-
   vector<float> theta_avgs(labels_num, 0), theta_refs(labels_num);
   vector<cv::Point2f> point_mus(labels_num, cv::Point2f(0, 0));
   vector<int> num(labels_num, 0);
@@ -56,12 +55,9 @@ void get_segments(vector<cv::Vec4f>& lines, vector<Segment>& segments, vector<in
 
     if (num[label] == 1) {  // 当該ラベルの１つ目の線分
       theta_refs[label] = theta;
-      assert(theta_refs[label] < F_PI/2 || theta_refs[label] > -F_PI/2);
       continue;
     }
     theta_delta = angle_sub(theta, theta_refs[label]);
-    // 角度の差が2倍に収まっている(角度計算の誤り検出)
-    assert(theta_delta * 180 < LINE_EQUAL_DEGREE * F_PI * 2);
     theta_avgs[label] += theta_delta;
   }
 
@@ -72,6 +68,7 @@ void get_segments(vector<cv::Vec4f>& lines, vector<Segment>& segments, vector<in
     point_mus[l] /= num[l];
   }
 
+  // 各segmentにおいて、実際にlineがある(延長していない)範囲を求める
   vector<float> upper_dists(labels_num, -1);
   vector<float> lower_dists(labels_num, 1);
   for (int i = 0; i < lines.size(); i++) {
@@ -94,6 +91,20 @@ void get_segments(vector<cv::Vec4f>& lines, vector<Segment>& segments, vector<in
   }
 }
 
+void remove_central_lines(vector<cv::Vec4f>& lines) {
+  vector<cv::Vec4f> lines_refined;
+  for (int i = 0; i < lines.size(); i++) {
+    cv::Vec4f& line = lines[i];
+    float mx = (line[0] + line[2]) / 2;
+    float my = (line[1] + line[3]) / 2;
+    if (fabs(mx - img_size.width/2) > CENTER_WIDTH/2 ||
+        fabs(my - img_size.height/2) > CENTER_HEIGHT/2) {
+      lines_refined.push_back(line);
+    }
+  }
+  lines = lines_refined;
+}
+
 void remove_central_segments(vector<Segment>& segments) {
   vector<Segment> segments_refined;
   for (int i = 0; i < segments.size(); i++) {
@@ -108,7 +119,7 @@ void remove_central_segments(vector<Segment>& segments) {
 }
 
 void draw_lines(cv::Mat& src, cv::Mat& dst, vector<Segment>& segments) {
-  cv::RNG rng(12345);
+  cv::RNG rng(1234);
   cv::cvtColor(src, dst, cv::COLOR_GRAY2BGR);
   vector<cv::Scalar> colors;
   for (int i = 0; i < segments.size(); i++) {
@@ -126,7 +137,7 @@ void draw_lines(cv::Mat& src, cv::Mat& dst, vector<Segment>& segments) {
 }
 
 void draw_labeled_lines(cv::Mat& src, cv::Mat& dst, vector<cv::Vec4f>& lines, vector<int> labels, int labels_num) {
-  cv::RNG rng(12345);
+  cv::RNG rng(12341);
   vector<cv::Scalar> colors;
   for (int i = 0; i < labels_num; i++) {
     colors.push_back(cv::Scalar(rng.uniform(0, 255), rng.uniform(0, 255), rng.uniform(0, 255)));
@@ -142,10 +153,11 @@ void draw_labeled_lines(cv::Mat& src, cv::Mat& dst, vector<cv::Vec4f>& lines, ve
 }
 
 bool line_equal(const cv::Vec4f& l1, const cv::Vec4f& l2) {
-  float theta1, theta2, theta_delta, theta_avg, theta_orth;
+  float theta1, theta2, theta_delta, theta_avg;
   theta1 = atanf((l1[1] - l1[3]) / (l1[0] - l1[2] + EPSILON));
   theta2 = atanf((l2[1] - l2[3]) / (l2[0] - l2[2] + EPSILON));
   if (theta1 < theta2) swap(theta1, theta2);
+  // theta_delta = fabs(angle_sub(theta1, theta2));
   if (theta1 - theta2 < F_PI / 2) {
     theta_delta = theta1 - theta2;
     theta_avg = (theta1 + theta2) / 2;
@@ -154,11 +166,10 @@ bool line_equal(const cv::Vec4f& l1, const cv::Vec4f& l2) {
     theta_avg = (theta1 + theta2 + F_PI) / 2;
     if (theta_avg > F_PI / 2) theta_avg -= F_PI;
   }
-  if (theta_avg > 0) {
-    theta_orth = theta_avg - F_PI / 2;
-  } else {
-    theta_orth = theta_avg + F_PI / 2;
-  }
+  // cout << "theta1 = " << theta1*180/F_PI << endl;
+  // cout << "theta2 = " << theta2*180/F_PI << endl;
+  // cout << "theta_delta = " << theta_delta*180/F_PI << endl;
+  // cout << "theta_avg = " << theta_avg*180/F_PI << endl;
 
   // 向きが異なる2線分はマージしない
   if (theta_delta * 180 > LINE_EQUAL_DEGREE * F_PI) {
@@ -166,18 +177,21 @@ bool line_equal(const cv::Vec4f& l1, const cv::Vec4f& l2) {
   }
 
   float dist_point = min({powf(l1[0] - l2[0], 2) + powf(l1[1] - l2[1], 2),
-                          powf(l1[0] - l2[2], 2) + powf(l1[1] - l2[3], 2),
-                          powf(l1[2] - l2[0], 2) + powf(l1[3] - l2[1], 2),
-                          powf(l1[2] - l2[2], 2) + powf(l1[3] - l2[3], 2)});
+                              powf(l1[0] - l2[2], 2) + powf(l1[1] - l2[3], 2),
+                              powf(l1[2] - l2[0], 2) + powf(l1[3] - l2[1], 2),
+                              powf(l1[2] - l2[2], 2) + powf(l1[3] - l2[3], 2)});
   dist_point = sqrtf(dist_point);
   float mx1 = (l1[0] + l1[2]) / 2;
   float my1 = (l1[1] + l1[3]) / 2;
   float mx2 = (l2[0] + l2[2]) / 2;
   float my2 = (l2[1] + l2[3]) / 2;
-  float dist_vert = fabs(cosf(theta_orth) * (mx1 - mx2) + sinf(theta_orth) * (my1 - my2));
+  float dist_ver = fabs(sinf(theta_avg) * (mx1 - mx2) - cosf(theta_avg) * (my1 - my2));
+
+  // cout << "dist_ver = " << dist_ver << endl;
+  // cout << "dist_point = " << dist_point << endl;
 
   // 端点が遠く、垂直距離が長い２線分はマージしない
-  if (dist_point > POINT_EQUAL_DISTANCE && dist_vert > LINE_EQUAL_DISTANCE) {
+  if (dist_point > POINT_EQUAL_DISTANCE && dist_ver > LINE_EQUAL_DISTANCE) {
     return false;
   }
 
@@ -194,4 +208,10 @@ void get_combi_indice(int am, int bm, int cm, int dm, vector<vector<int> >& indi
       }
     }
   }
+}
+
+void imshow_resized(string window_name, cv::Mat& img, cv::Size& size) {
+  cv::Mat resized;
+  cv::resize(img, resized, size);
+  cv::imshow(window_name, resized);
 }

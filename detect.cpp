@@ -5,6 +5,8 @@
 #include <cassert>
 #include "detect.hpp"
 
+#define DISPLAY_SIZE 600  // 表示する際の高さ
+
 using namespace std;
 
 float LINE_EQUAL_DEGREE;         // 同じ線分とみなす線分間の最大角度
@@ -41,13 +43,14 @@ int main(int argc, char** argv) {
   double start = double(cv::getTickCount());
 
   init(image);
+  cv::namedWindow("original image", cv::WINDOW_NORMAL);
   cv::imshow("original image", image);
 
   cv::Mat processed;
 
   // Create FLD detector
-  int length_threshold = 20;
-  float distance_threshold = 1.41421356f;
+  int length_threshold = (img_size.width + img_size.height) / 2 * 0.04; //20;
+  float distance_threshold = (img_size.width + img_size.height) / 2 * 0.003;// 1.41421356f;
   double canny_th1 = 5.0;
   double canny_th2 = 50.0;
   int canny_aperture_size = 3;
@@ -60,15 +63,16 @@ int main(int argc, char** argv) {
 
   vector<cv::Vec4f> lines;
   fld->detect(image, lines);
-
-  cout << "num of lines = " << lines.size() << endl;
+  cout << "num of lines = " << lines.size() << " => ";
+  remove_central_lines(lines);
+  cout << lines.size() << endl;
 
   std::vector<int> labels;
   int labels_num = cv::partition(lines, labels, line_equal);
-  printf("labels_num = %d\n", labels_num);
 
   // Show found lines
   draw_labeled_lines(image, processed, lines, labels, labels_num);
+  cv::namedWindow("line detected", cv::WINDOW_NORMAL);
   cv::imshow("line detected", processed);
 
   vector<Segment> segments;
@@ -78,6 +82,7 @@ int main(int argc, char** argv) {
   cout << segments.size() << endl;
 
   draw_lines(image, processed, segments);
+  cv::namedWindow("line refined", cv::WINDOW_NORMAL);
   cv::imshow("line refined", processed);
 
   vector<Intersection> intersections;
@@ -95,10 +100,10 @@ int main(int argc, char** argv) {
     cv::putText(processed, to_string(inter.m_id), cross_point, cv::FONT_HERSHEY_PLAIN,
                    1.0, cv::Scalar(255, 0, 0));
     cv::circle(processed, cross_point, 2, cv::Scalar(255, 0, 0), -1);
-    printf("%s", inter.m_description);
+    // printf("%s", inter.m_description);
   }
   cout << "num of intersections " << intersections.size() << endl;
-  // cv::imshow("intersections detected", processed);
+  cv::imshow("intersections detected", processed);
 
   vector<Intersection> inters_lt, inters_rt, inters_lb, inters_rb;
   for (int i = 0; i < intersections.size(); i++) {
@@ -158,7 +163,7 @@ int main(int argc, char** argv) {
       idx_lb = indice[i][2];
       idx_rb = indice[i][3];
     }
-    printf("(%d, %d, %d, %d) : %f\n", inter_lt.m_id, inter_rt.m_id, inter_lb.m_id, inter_rb.m_id, score);
+    // printf("(%d, %d, %d, %d) : %f\n", inter_lt.m_id, inter_rt.m_id, inter_lb.m_id, inter_rb.m_id, score);
   }
 
   cv::cvtColor(image, processed, cv::COLOR_GRAY2BGR);
@@ -173,6 +178,7 @@ int main(int argc, char** argv) {
 
   printf("best score: %f  (%d, %d, %d, %d)\n", best_score,
       inters_lt[idx_lt].m_id,  inters_rt[idx_rt].m_id, inters_lb[idx_lb].m_id, inters_rb[idx_rb].m_id);
+  cv::namedWindow("rectangle detected", cv::WINDOW_NORMAL);
   cv::imshow("rectangle detected", processed);
 
   vector<cv::Point2f> src_points = {inters_lt[idx_lt].get_cross_point(),
@@ -185,7 +191,10 @@ int main(int argc, char** argv) {
                                           cv::Point2f(img_size.width, img_size.height)};
   cv::Mat M = findHomography(src_points, dst_points, cv::RANSAC, 3);
   cv::warpPerspective(image, processed, M, img_size);
+  cv::namedWindow("homography result", cv::WINDOW_NORMAL);
   cv::imshow("homography result", processed);
+
+  cv::imwrite("detect_out.jpeg", processed);
 
   double duration_ms = (double(cv::getTickCount()) - start) * 1000 / cv::getTickFrequency();
   cout << "It took " << duration_ms << " ms." << endl;

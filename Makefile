@@ -14,6 +14,9 @@ HEADER = detect.hpp
 
 all: $(TARGET)
 
+test: test.cp utility.cpp segment.cpp
+	$(CXX) -o test_exe $(CXXFLAGS) $^ $(LDLIBS)
+
 $(TARGET): $(OBJECTS)
 	$(CXX) $(WALL) -o $@ $^ $(LDLIBS)
 
