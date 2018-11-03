@@ -12,17 +12,17 @@ void init(cv::Mat& image) {
   int len_avg = (img_size.width + img_size.height) / 2;
   LINE_EQUAL_DEGREE = 3;
   LINE_EQUAL_DISTANCE = len_avg * 0.005;    // 500 =>  2.5
-  POINT_EQUAL_DISTANCE = len_avg * 0.006;   // 500 => 3.0
+  // POINT_EQUAL_DISTANCE = len_avg * 0.000;   // 500 => 3.0
   LINE_INCLUDE_DISTANCE = len_avg * 0.03;  // 500 => 15.0
   LINE_CROSS_DEGREE = 60;
-  CENTER_WIDTH = img_size.width * 0.6;
-  CENTER_HEIGHT = img_size.height * 0.6;
+  CENTER_WIDTH = img_size.width * 0.5;
+  CENTER_HEIGHT = img_size.height * 0.5;
 
   POINT_IN_SECTION = 5;
 
   cout << "LINE_EQUAL_DEGREE " << LINE_EQUAL_DEGREE << endl;
   cout << "LINE_EQUAL_DISTANCE " << LINE_EQUAL_DISTANCE << endl;
-  cout << "POINT_EQUAL_DISTANCE " << POINT_EQUAL_DISTANCE << endl;
+  // cout << "POINT_EQUAL_DISTANCE " << POINT_EQUAL_DISTANCE << endl;
   cout << "LINE_INCLUDE_DISTANCE " << LINE_INCLUDE_DISTANCE << endl;
   cout << "LINE_CROSS_DEGREE " << LINE_CROSS_DEGREE << endl;
   cout << "CENTER_WIDTH " << CENTER_WIDTH << endl;
@@ -166,10 +166,6 @@ bool line_equal(const cv::Vec4f& l1, const cv::Vec4f& l2) {
     theta_avg = (theta1 + theta2 + F_PI) / 2;
     if (theta_avg > F_PI / 2) theta_avg -= F_PI;
   }
-  // cout << "theta1 = " << theta1*180/F_PI << endl;
-  // cout << "theta2 = " << theta2*180/F_PI << endl;
-  // cout << "theta_delta = " << theta_delta*180/F_PI << endl;
-  // cout << "theta_avg = " << theta_avg*180/F_PI << endl;
 
   // 向きが異なる2線分はマージしない
   if (theta_delta * 180 > LINE_EQUAL_DEGREE * F_PI) {
@@ -187,11 +183,10 @@ bool line_equal(const cv::Vec4f& l1, const cv::Vec4f& l2) {
   float my2 = (l2[1] + l2[3]) / 2;
   float dist_ver = fabs(sinf(theta_avg) * (mx1 - mx2) - cosf(theta_avg) * (my1 - my2));
 
-  // cout << "dist_ver = " << dist_ver << endl;
-  // cout << "dist_point = " << dist_point << endl;
-
   // 端点が遠く、垂直距離が長い２線分はマージしない
-  if (dist_point > POINT_EQUAL_DISTANCE && dist_ver > LINE_EQUAL_DISTANCE) {
+  // TODO: POINT_EQUAL_DISTANCEは必要か
+  // if (dist_point > POINT_EQUAL_DISTANCE && dist_ver > LINE_EQUAL_DISTANCE) {
+  if (dist_ver > LINE_EQUAL_DISTANCE) {
     return false;
   }
 

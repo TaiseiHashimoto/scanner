@@ -11,7 +11,7 @@ using namespace std;
 
 float LINE_EQUAL_DEGREE;         // 同じ線分とみなす線分間の最大角度
 float LINE_EQUAL_DISTANCE;      // 同じ線分とみなす中点同士の最大垂直距離
-float POINT_EQUAL_DISTANCE;     // 別の線分の端点を同じ点とみなす最大距離
+// float POINT_EQUAL_DISTANCE;     // 別の線分の端点を同じ点とみなす最大距離
 float LINE_INCLUDE_DISTANCE;    // 線分に点が含まれるとみなす最大距離
 float LINE_CROSS_DEGREE;         // 直交とみなす最小角度
 float CENTER_WIDTH;               // 画像中心部の幅

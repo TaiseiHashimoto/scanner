@@ -74,7 +74,7 @@ void get_combi_indice(int am, int bm, int cm, int dm, std::vector<std::vector<in
 
 extern float LINE_EQUAL_DEGREE;         // 同じ線分とみなす線分間の最大角度
 extern float LINE_EQUAL_DISTANCE;      // 同じ線分とみなす中点同士の最大垂直距離
-extern float POINT_EQUAL_DISTANCE;     // 別の線分の端点を同じ点とみなす最大距離
+// extern float POINT_EQUAL_DISTANCE;     // 別の線分の端点を同じ点とみなす最大距離
 extern float LINE_INCLUDE_DISTANCE;    // 線分に点が含まれるとみなす最大距離
 extern float LINE_CROSS_DEGREE;         // 直交とみなす最小角度
 extern float CENTER_WIDTH;               // 画像中心部の幅
