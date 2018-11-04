@@ -56,6 +56,7 @@ public:
 	bool is_left() const { return m_pos_hor == LEFT; }
 	bool is_right() const { return m_pos_hor == RIGHT; }
 	char m_description[300];	// For debug
+	char m_ml_desc[300];		// For ml data
 
 	int m_id;
 	static int num;
@@ -88,5 +89,6 @@ extern const float SQRT2;
 extern const float INF;
 
 extern cv::Size img_size;
+extern int img_avglen;
 
 #endif

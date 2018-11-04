@@ -61,7 +61,7 @@ void Intersection::get_intersections(vector<Segment>& segments, vector<Intersect
 		  // 位置関係を求める
 		  enum Horizontal pos_hor;
 		  enum Vertical pos_ver;
-		  
+
 		  if (cross_point.x < seg_hor.m_p1.x + LINE_INCLUDE_DISTANCE) {
 		  	if (cross_point.x > img_size.width / 2 - CENTER_WIDTH / 2) continue;	
 		  	pos_hor = LEFT;
@@ -86,7 +86,7 @@ void Intersection::get_intersections(vector<Segment>& segments, vector<Intersect
 
 void Intersection::set_score() {
 	const float w_seglen = 0.03;
-	const float w_segdist = 1;//500;
+	const float w_segdist = 1;
 	const float w_degree = 1000;
 	const float w_position = 0.002;
 	const float score_clip = 20.0;		// 大きすぎるスコアは頭打ちにする
@@ -95,27 +95,38 @@ void Intersection::set_score() {
 
 	m_score = 0;
 	char pos_str[15];
-	if (m_pos_hor == LEFT)
-		sprintf(pos_str, "LEFT_");
-	else
-		sprintf(pos_str, "RIGHT_");
-	if (m_pos_ver == TOP)
-		sprintf(pos_str, "%sTOP", pos_str);
-	else
-		sprintf(pos_str, "%sBOTTOM", pos_str);
-
+	int pos_num;
+	if (m_pos_hor == LEFT && m_pos_ver == TOP) {
+		sprintf(pos_str, "LEFT_TOP");
+		pos_num = 0;
+	}
+	else if (m_pos_hor == RIGHT && m_pos_ver == TOP) {
+		sprintf(pos_str, "RIGHT_TOP");
+		pos_num = 1;
+	}
+	else if (m_pos_hor == LEFT && m_pos_ver == BOTTOM) {
+		sprintf(pos_str, "LEFT_BOTTOM");
+		pos_num = 2;
+	}
+	else if (m_pos_hor == RIGHT && m_pos_ver == BOTTOM) {
+		sprintf(pos_str, "RIGHT_BOTTOM");
+		pos_num = 3;
+	}
 	sprintf(m_description, "# %d  segment: %d, %d  position: %s\n", m_id, m_seg_hor_id, m_seg_ver_id, pos_str);
+	sprintf(m_ml_desc, "%d,%d", m_id, pos_num);
 
 	float score_seglen = m_seglen_hor*m_seglen_ver/40 + m_seglen_hor + m_seglen_ver;
 	score_seglen *= w_seglen;
 	m_score += min(score_seglen, score_clip);
 	sprintf(m_description, "%sseglen: %f  (%f, %f)\n", m_description, score_seglen, m_seglen_hor, m_seglen_ver);
+	sprintf(m_ml_desc, "%s,%f,%f", m_ml_desc, m_seglen_hor/img_size.width, m_seglen_ver/img_size.height);
 
 	// float score_segdist = 1.0 / (m_segdist_hor + m_segdist_ver + 1);
 	float score_segdist = -sqrtf(powf(m_segdist_hor, 2) + powf(m_segdist_ver, 2));
 	score_segdist *= w_segdist;
 	m_score += max(score_segdist, -score_clip);
 	sprintf(m_description, "%ssegdist: %f  (%f, %f)\n", m_description, score_segdist, m_segdist_hor, m_segdist_ver);
+	sprintf(m_ml_desc, "%s,%f,%f", m_ml_desc, m_segdist_hor/img_size.width, m_segdist_ver/img_size.height);
 
 	float score_cross_degree = -powf(m_cross_degree - F_PI/2, 2)
 																	-powf(angle_sub(m_segdeg_hor, 0), 2) / 2
@@ -124,6 +135,7 @@ void Intersection::set_score() {
 	m_score += max(score_cross_degree, -score_clip);
 	sprintf(m_description, "%scross_degree: %f  (%f, %f, %f)\n", m_description, score_cross_degree,
 							m_cross_degree*180/F_PI, m_segdeg_hor*180/F_PI, m_segdeg_ver*180/F_PI);
+	sprintf(m_ml_desc, "%s,%f,%f,%f", m_ml_desc, fabs(m_cross_degree), fabs(m_segdeg_hor), fabs(m_segdeg_ver));
 
 	float score_position = 0;
 	if (m_pos_hor == LEFT)
@@ -138,6 +150,16 @@ void Intersection::set_score() {
 	score_position *= w_position;
 	m_score += max(score_position, -score_clip);
 	sprintf(m_description, "%sposition: %f  [%f, %f]\n", m_description, score_position, m_cross_point.x, m_cross_point.y);
+	float dist_x, dist_y;
+	if (m_pos_hor == LEFT)
+		dist_x = fabs(m_cross_point.x / img_size.width - 0.05);
+	else if (m_pos_hor == RIGHT)
+		dist_x = fabs(m_cross_point.x / img_size.width - 0.95);
+	if (m_pos_ver == TOP)
+		dist_y = fabs(m_cross_point.y / img_size.height - 0.05);
+	else if (m_pos_ver == BOTTOM)
+		dist_y = fabs(m_cross_point.y / img_size.height - 0.95);
+	sprintf(m_ml_desc, "%s,%f,%f", m_ml_desc, dist_x, dist_y);
 
-	sprintf(m_description, "%sscore... %f\n\n", m_description, m_score);
+	sprintf(m_description, "%sscore... %f\n", m_description, m_score);
 }

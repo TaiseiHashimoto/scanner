@@ -8,12 +8,12 @@ using namespace std;
 void init(cv::Mat& image) {
   // 各種値を初期化
   img_size = image.size();
+  img_avglen = (img_size.width + img_size.height) / 2;
   cout << img_size << endl;
-  int len_avg = (img_size.width + img_size.height) / 2;
   LINE_EQUAL_DEGREE = 3;
-  LINE_EQUAL_DISTANCE = len_avg * 0.005;    // 500 =>  2.5
-  // POINT_EQUAL_DISTANCE = len_avg * 0.000;   // 500 => 3.0
-  LINE_INCLUDE_DISTANCE = len_avg * 0.03;  // 500 => 15.0
+  LINE_EQUAL_DISTANCE = img_avglen * 0.005;    // 500 =>  2.5
+  // POINT_EQUAL_DISTANCE = img_avglen * 0.000;   // 500 => 3.0
+  LINE_INCLUDE_DISTANCE = 200;//img_avglen * 0.03;  // 500 => 15.0
   LINE_CROSS_DEGREE = 60;
   CENTER_WIDTH = img_size.width * 0.5;
   CENTER_HEIGHT = img_size.height * 0.5;
@@ -126,9 +126,9 @@ void draw_lines(cv::Mat& src, cv::Mat& dst, vector<Segment>& segments) {
     Segment& seg = segments[i];
     cv::Scalar color(rng.uniform(0, 127), rng.uniform(0, 127), rng.uniform(0, 127));
     colors.push_back(color);
-    cv::line(dst, seg.m_pe1, seg.m_p1, color, 2);
+    // cv::line(dst, seg.m_pe1, seg.m_p1, color, 2);
     cv::line(dst, seg.m_p1, seg.m_p2, color*2, 2);
-    cv::line(dst, seg.m_p2, seg.m_pe2, color, 2);
+    // cv::line(dst, seg.m_p2, seg.m_pe2, color, 2);
   }
   for (int i = 0; i < segments.size(); i++) {
     Segment& seg = segments[i];

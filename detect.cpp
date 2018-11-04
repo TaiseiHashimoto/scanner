@@ -25,6 +25,7 @@ const float SQRT2 = 1.4142135f;
 const float INF = 1e7;
 
 cv::Size img_size;
+int img_avglen;
 
 int main(int argc, char** argv) {
   cv::CommandLineParser parser(argc, argv, "{@input|../opencv-3.2.0/samples/data/building.jpg|input image}{help h||show help message}");
@@ -36,7 +37,7 @@ int main(int argc, char** argv) {
 
   cv::Mat image = cv::imread(in, cv::IMREAD_GRAYSCALE);
 
-  if (image.empty()) { 
+  if (image.empty()) {
     return -1;
   }
 
@@ -49,8 +50,8 @@ int main(int argc, char** argv) {
   cv::Mat processed;
 
   // Create FLD detector
-  int length_threshold = (img_size.width + img_size.height) / 2 * 0.04; //20;
-  float distance_threshold = (img_size.width + img_size.height) / 2 * 0.003;// 1.41421356f;
+  int length_threshold = img_avglen * 0.04; //20;
+  float distance_threshold = img_avglen * 0.003;// 1.41421356f;
   double canny_th1 = 5.0;
   double canny_th2 = 50.0;
   int canny_aperture_size = 3;
@@ -94,13 +95,36 @@ int main(int argc, char** argv) {
           return left.get_score() > right.get_score();
         });
 
-  for (int i = 0; i < intersections.size() && i < 40; i++) {
+  vector<int> counts(4, 0);
+  const int max_count = 15;
+  for (int i = 0; i < intersections.size(); i++) {
     Intersection& inter = intersections[i];
+
+    if (counts[0] == max_count && counts[1] == max_count && counts[2] == max_count && counts[3] == max_count)
+      break;
+    if (inter.is_left() && inter.is_top()) {
+      if (counts[0] < max_count) counts[0]++;
+      else continue;
+    }
+    else if (inter.is_right() && inter.is_top()) {
+      if (counts[1] < max_count) counts[1]++;
+      else continue;
+    }
+    else if (inter.is_left() && inter.is_bottom()) {
+      if (counts[2] < max_count) counts[2]++;
+      else continue;
+    }
+    else if (inter.is_right() && inter.is_bottom()) {
+      if (counts[3] < max_count) counts[3]++;
+      else continue;
+    }
+    
     cv::Point2f cross_point = inter.get_cross_point();
     cv::putText(processed, to_string(inter.m_id), cross_point, cv::FONT_HERSHEY_PLAIN,
                    1.0, cv::Scalar(255, 0, 0));
     cv::circle(processed, cross_point, 2, cv::Scalar(255, 0, 0), -1);
-    // printf("%s", inter.m_description);
+    fprintf(stdout, "%s\n", inter.m_description);
+    fprintf(stderr, "%s\n", inter.m_ml_desc);
   }
   cout << "num of intersections " << intersections.size() << endl;
   cv::imshow("intersections detected", processed);
@@ -129,9 +153,9 @@ int main(int argc, char** argv) {
 
   // どれか1つでも空の場合はエラー
   assert(!inters_lt.empty());
-  assert(!inters_lt.empty());
-  assert(!inters_lt.empty());
-  assert(!inters_lt.empty());
+  assert(!inters_rt.empty());
+  assert(!inters_lb.empty());
+  assert(!inters_rb.empty());
   float best_score = -INF;
   int idx_lt, idx_rt, idx_lb, idx_rb;
   for (int i = 0; i < indice.size(); i++) {
