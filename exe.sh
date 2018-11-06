@@ -6,7 +6,7 @@ fi
 
 touch data/$1/ans.txt
 
-bin/detect test/img_ml/$1.jpeg 1> data/$1/ref.txt 2> data/$1/data.txt
+bin/detect data/$1
 
 if [ $?  = 0 ]; then
 	echo "done"

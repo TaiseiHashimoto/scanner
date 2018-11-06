@@ -1,0 +1,1 @@
+./exe.sh: 9: ./exe.sh: bin/detect: Permission denied

@@ -3,6 +3,7 @@
 #include <iostream>
 #include <cmath>
 #include <cassert>
+#include <fstream>
 #include "detect.hpp"
 
 #define DISPLAY_SIZE 600  // 表示する際の高さ
@@ -10,16 +11,16 @@
 using namespace std;
 
 float LINE_EQUAL_DEGREE;         // 同じ線分とみなす線分間の最大角度
-float LINE_EQUAL_DISTANCE;      // 同じ線分とみなす中点同士の最大垂直距離
-// float POINT_EQUAL_DISTANCE;     // 別の線分の端点を同じ点とみなす最大距離
-float LINE_INCLUDE_DISTANCE;    // 線分に点が含まれるとみなす最大距離
 float LINE_CROSS_DEGREE;         // 直交とみなす最小角度
+float LINE_EQUAL_DISTANCE;      // 同じ線分とみなす中点同士の最大垂直距離
+float POINT_CONNECT_DISTANCE;  // 同じ線分とみなす端点の最大距離
 float CENTER_WIDTH;               // 画像中心部の幅
 float CENTER_HEIGHT;              // 画像中心部の高さ
+float INTERSECT_DIST_RATIO;     // 線分から交点までの距離の最大値(割合)
 
 int POINT_IN_SECTION;             // 画像の4箇所それぞれが含む候補点の数
 
-const float EPSILON = 0.0;  // 1e-7
+const float EPSILON = 1e-7;
 const float F_PI = 3.1415926f;
 const float SQRT2 = 1.4142135f;
 const float INF = 1e7;
@@ -27,21 +28,32 @@ const float INF = 1e7;
 cv::Size img_size;
 int img_avglen;
 
+ofstream features_out;
+
 int main(int argc, char** argv) {
+  double start = double(cv::getTickCount());
+
   cv::CommandLineParser parser(argc, argv, "{@input|../opencv-3.2.0/samples/data/building.jpg|input image}{help h||show help message}");
   if (parser.has("help")) {
       parser.printMessage();
       return 0;
   }
-  string in = parser.get<string>("@input");
+  string folder_name = parser.get<string>("@input");
 
-  cv::Mat image = cv::imread(in, cv::IMREAD_GRAYSCALE);
+  cv::Mat image = cv::imread(folder_name + "/img.jpeg", cv::IMREAD_GRAYSCALE);
+  assert(!image.empty());
+  cv::Mat org_image = image.clone();
+  // TODO: clean code
+  if (image.size().width > 1000) {  // 縮小して計算時間を短縮する
+    cv::resize(image, image, cv::Size(450, 600), cv::INTER_AREA);
+  }
+  cv::Size org_size = org_image.size();
 
   if (image.empty()) {
     return -1;
   }
 
-  double start = double(cv::getTickCount());
+  features_out = ofstream(folder_name + "/ml_data.csv");
 
   init(image);
   cv::namedWindow("original image", cv::WINDOW_NORMAL);
@@ -50,8 +62,8 @@ int main(int argc, char** argv) {
   cv::Mat processed;
 
   // Create FLD detector
-  int length_threshold = img_avglen * 0.04; //20;
-  float distance_threshold = img_avglen * 0.003;// 1.41421356f;
+  int length_threshold = img_avglen * 0.04;
+  float distance_threshold = img_avglen * 0.003;
   double canny_th1 = 5.0;
   double canny_th2 = 50.0;
   int canny_aperture_size = 3;
@@ -75,9 +87,10 @@ int main(int argc, char** argv) {
   draw_labeled_lines(image, processed, lines, labels, labels_num);
   cv::namedWindow("line detected", cv::WINDOW_NORMAL);
   cv::imshow("line detected", processed);
+  cv::imwrite("line_detected.jpeg", processed);
 
   vector<Segment> segments;
-  get_segments(lines, segments, labels, labels_num);
+  Segment::get_segments(lines, segments, labels, labels_num);
   cout << "num of segments: " << segments.size() << " => ";
   remove_central_segments(segments);
   cout << segments.size() << endl;
@@ -85,49 +98,41 @@ int main(int argc, char** argv) {
   draw_lines(image, processed, segments);
   cv::namedWindow("line refined", cv::WINDOW_NORMAL);
   cv::imshow("line refined", processed);
+  cv::imwrite("line_refined.jpeg", processed);
 
   vector<Intersection> intersections;
   Intersection::get_intersections(segments, intersections);
 
-  cv::cvtColor(image, processed, cv::COLOR_GRAY2BGR);
+  ifstream ml_score(folder_name + "/score.csv");
+  if (!ml_score) {
+    cerr << "Cannot open " << folder_name << "/score.csv" << endl;
+    exit(1);
+  }
+  for (int i = 0; i < intersections.size(); i++) {
+    string str;
+    getline(ml_score, str);
+    intersections[i].set_score(stof(str));
+  }
+
   sort(intersections.begin(), intersections.end(), 
         [](const Intersection& left, const Intersection& right) {
           return left.get_score() > right.get_score();
         });
 
-  vector<int> counts(4, 0);
-  const int max_count = 15;
+  // vector<int> counts(4, 0);
+  // const int max_count = 1000;
   for (int i = 0; i < intersections.size(); i++) {
-    Intersection& inter = intersections[i];
-
-    if (counts[0] == max_count && counts[1] == max_count && counts[2] == max_count && counts[3] == max_count)
-      break;
-    if (inter.is_left() && inter.is_top()) {
-      if (counts[0] < max_count) counts[0]++;
-      else continue;
-    }
-    else if (inter.is_right() && inter.is_top()) {
-      if (counts[1] < max_count) counts[1]++;
-      else continue;
-    }
-    else if (inter.is_left() && inter.is_bottom()) {
-      if (counts[2] < max_count) counts[2]++;
-      else continue;
-    }
-    else if (inter.is_right() && inter.is_bottom()) {
-      if (counts[3] < max_count) counts[3]++;
-      else continue;
-    }
-    
+    Intersection& inter = intersections[i];    
     cv::Point2f cross_point = inter.get_cross_point();
     cv::putText(processed, to_string(inter.m_id), cross_point, cv::FONT_HERSHEY_PLAIN,
                    1.0, cv::Scalar(255, 0, 0));
     cv::circle(processed, cross_point, 2, cv::Scalar(255, 0, 0), -1);
-    fprintf(stdout, "%s\n", inter.m_description);
-    fprintf(stderr, "%s\n", inter.m_ml_desc);
+    // fprintf(stdout, "%s\n", inter.m_description);
+    // fprintf(stderr, "%s\n", inter.m_ml_desc);
   }
   cout << "num of intersections " << intersections.size() << endl;
   cv::imshow("intersections detected", processed);
+  cv::imwrite("intersection_detected.jpeg", processed);
 
   vector<Intersection> inters_lt, inters_rt, inters_lb, inters_rb;
   for (int i = 0; i < intersections.size(); i++) {
@@ -149,7 +154,7 @@ int main(int argc, char** argv) {
 
   vector<vector<int> > indice;
   get_combi_indice(inters_lt.size(), inters_rt.size(),
-                        inters_lb.size(), inters_rb.size(), indice);
+                    inters_lb.size(), inters_rb.size(), indice);
 
   // どれか1つでも空の場合はエラー
   assert(!inters_lt.empty());
@@ -177,8 +182,8 @@ int main(int argc, char** argv) {
     float deg4 = acosf(v3.dot(v4) / cv::norm(v3) / cv::norm(v4));
 
     float weight = 500;
-    score -= (powf(angle_sub(deg1, F_PI/2), 2) + powf(angle_sub(deg2, F_PI/2), 2)
-              + powf(angle_sub(deg1, F_PI/2), 2) + powf(angle_sub(deg2, F_PI/2), 2)) * weight;
+    // score -= (powf(angle_sub(deg1, F_PI/2), 2) + powf(angle_sub(deg2, F_PI/2), 2)
+    //           + powf(angle_sub(deg1, F_PI/2), 2) + powf(angle_sub(deg2, F_PI/2), 2)) * weight;
 
     if (best_score < score) {
       best_score = score;
@@ -204,17 +209,35 @@ int main(int argc, char** argv) {
       inters_lt[idx_lt].m_id,  inters_rt[idx_rt].m_id, inters_lb[idx_lb].m_id, inters_rb[idx_rb].m_id);
   cv::namedWindow("rectangle detected", cv::WINDOW_NORMAL);
   cv::imshow("rectangle detected", processed);
+  cv::imwrite("rectangle_detected.jpeg", processed);
 
-  vector<cv::Point2f> src_points = {inters_lt[idx_lt].get_cross_point(),
-                                          inters_rt[idx_rt].get_cross_point(),
-                                          inters_lb[idx_lb].get_cross_point(),
-                                          inters_rb[idx_rb].get_cross_point()};
-  vector<cv::Point2f> dst_points = {cv::Point2f(0, 0),
-                                          cv::Point2f(img_size.width, 0),
-                                          cv::Point2f(0, img_size.height),
-                                          cv::Point2f(img_size.width, img_size.height)};
-  cv::Mat M = findHomography(src_points, dst_points, cv::RANSAC, 3);
-  cv::warpPerspective(image, processed, M, img_size);
+  // もとの画像の座標にマップする
+  vector<cv::Point2f> src_points = {
+    cv::Point2f(
+      inters_lt[idx_lt].get_cross_point().x / img_size.width * org_size.width,
+      inters_lt[idx_lt].get_cross_point().y / img_size.height * org_size.height
+    ),
+    cv::Point2f(
+      inters_rt[idx_rt].get_cross_point().x / img_size.width * org_size.width,
+      inters_rt[idx_rt].get_cross_point().y / img_size.height * org_size.height
+    ),
+    cv::Point2f(
+      inters_lb[idx_lb].get_cross_point().x / img_size.width * org_size.width,
+      inters_lb[idx_lb].get_cross_point().y / img_size.height * org_size.height
+    ),
+    cv::Point2f(
+      inters_rb[idx_rb].get_cross_point().x / img_size.width * org_size.width,
+      inters_rb[idx_rb].get_cross_point().y / img_size.height * org_size.height
+    )
+  };
+  vector<cv::Point2f> dst_points = {
+    cv::Point2f(0, 0),
+    cv::Point2f(org_size.width, 0),
+    cv::Point2f(0, org_size.height),
+    cv::Point2f(org_size.width, org_size.height)
+  };
+  cv::Mat M = getPerspectiveTransform(src_points, dst_points);
+  cv::warpPerspective(org_image, processed, M, org_size);
   cv::namedWindow("homography result", cv::WINDOW_NORMAL);
   cv::imshow("homography result", processed);
 

@@ -1,0 +1,83 @@
+[450 x 600]
+LINE_EQUAL_DEGREE 2
+LINE_CROSS_DEGREE 60
+LINE_EQUAL_DISTANCE 2.625
+POINT_CONNECT_DISTANCE 52.5
+CENTER_WIDTH 225
+CENTER_HEIGHT 300
+INTERSECT_DIST_RATIO 0.5
+num of lines = 42 => 16
+num of segments: 10 => 9
+# 7  segment: 9, 3  position: RIGHT_BOTTOM
+seglen: 139.332230  (347.114075, 444.033844)
+segdist: -8.780264  (8.774232, 0.325399)
+cross_degree: -1.430744  (88.084999, -1.293386, -89.378387)
+position: -14.729233  [394.755768, 534.328918]
+score... -4.940240
+
+# 1  segment: 9, 0  position: LEFT_BOTTOM
+seglen: 156.865540  (347.114075, 504.423645)
+segdist: -2.128598  (0.491285, 2.071127)
+cross_degree: -13.404317  (84.239098, -1.293386, -85.532478)
+position: -9.608666  [39.484863, 543.032654]
+score... -5.141581
+
+# 0  segment: 1, 0  position: LEFT_TOP
+seglen: 132.694214  (287.916748, 504.423645)
+segdist: -4.400840  (2.195783, 3.813912)
+cross_degree: -20.627535  (85.653427, 8.814095, -85.532478)
+position: -15.256922  [80.234695, 34.508751]
+score... -19.657761
+
+# 6  segment: 2, 3  position: RIGHT_TOP
+seglen: 25.382936  (33.226109, 444.033844)
+segdist: -3.414663  (0.721866, 3.337489)
+cross_degree: -83.977097  (76.658318, 13.963302, -89.378387)
+position: -20.031025  [399.987000, 86.684555]
+score... -23.414663
+
+# 9  segment: 9, 7  position: RIGHT_BOTTOM
+seglen: 16.796003  (347.114075, 21.983467)
+segdist: -279.981140  (19.584637, 279.295349)
+cross_degree: -1.268447  (89.072197, -1.293386, 87.778809)
+position: -22.409767  [366.436646, 535.022705]
+score... -24.472443
+
+# 8  segment: 9, 5  position: LEFT_BOTTOM
+seglen: 25.510668  (347.114075, 51.999298)
+segdist: -296.584595  (51.406940, 292.095459)
+cross_degree: -4.829484  (86.464005, -1.293386, -87.757393)
+position: -23.117788  [90.387917, 541.785583]
+score... -24.829485
+
+# 2  segment: 1, 3  position: RIGHT_TOP
+seglen: 117.842110  (287.916748, 444.033844)
+segdist: -34.072227  (33.600452, 5.650340)
+cross_degree: -32.336361  (81.807518, 8.814095, -89.378387)
+position: -19.231409  [400.014130, 84.363007]
+score... -39.231407
+
+# 3  segment: 1, 5  position: LEFT_TOP
+seglen: 21.426083  (287.916748, 51.999298)
+segdist: -161.462738  (29.376947, 158.767792)
+cross_degree: -25.753338  (83.428513, 8.814095, -87.757393)
+position: -27.899416  [111.357231, 39.360817]
+score... -40.000000
+
+# 4  segment: 1, 6  position: RIGHT_TOP
+seglen: 15.527159  (287.916748, 28.013845)
+segdist: -140.173401  (22.604664, 138.338760)
+cross_degree: -30.251326  (82.261337, 8.814095, -88.924568)
+position: -33.730209  [344.483368, 75.705643]
+score... -44.472839
+
+# 5  segment: 1, 7  position: RIGHT_TOP
+seglen: 14.044062  (287.916748, 21.983467)
+segdist: -158.987579  (18.989681, 157.849426)
+cross_degree: -49.679535  (78.964722, 8.814095, 87.778809)
+position: -32.417278  [348.055603, 76.262566]
+score... -45.955940
+
+num of intersections 10
+best score: -31.401161  (3, 6, 1, 9)
+It took 69.8099 ms.
