@@ -37,9 +37,9 @@ Segment::Segment(cv::Point2f& point_mu, float udist, float ldist, float theta) {
   clipLine(img_size, tmp1, tmp2);
   m_pe1 = tmp1; m_pe2 = tmp2;
 
-  if (m_id == 30) {
-    printf("id:%d theta=%f %d\n", m_id, m_theta*180/F_PI, m_type);
-  }
+  // if (m_id == 30) {
+  //   printf("id:%d theta=%f %d\n", m_id, m_theta*180/F_PI, m_type);
+  // }
 }
 
 void Segment::get_segments(vector<cv::Vec4f>& lines, vector<Segment>& segments, vector<int>& labels, int labels_num) {

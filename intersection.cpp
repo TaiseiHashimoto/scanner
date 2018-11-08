@@ -13,8 +13,8 @@ int Intersection::num;
 
 Intersection::Intersection(Segment& seg_hor, Segment& seg_ver, cv::Point2f& cross_point, float cross_degree, enum Horizontal pos_hor, enum Vertical pos_ver, float segdist_hor, float segdist_ver) {
   m_id = num++;
-  m_seg_hor_id = seg_hor.m_id;
-  m_seg_ver_id = seg_ver.m_id;
+  m_segid_hor = seg_hor.m_id;
+  m_segid_ver = seg_ver.m_id;
 
 	m_seglen_hor = cv::norm(seg_hor.m_p1 - seg_hor.m_p2);
 	m_seglen_ver = cv::norm(seg_ver.m_p1 - seg_ver.m_p2);
@@ -117,23 +117,23 @@ void Intersection::get_features() {
 		sprintf(pos_str, "RIGHT_BOTTOM");
 		pos_num = 3;
 	}
-	sprintf(m_description, "# %d  segment: %d, %d  position: %s\n", m_id, m_seg_hor_id, m_seg_ver_id, pos_str);
+	sprintf(m_description, "# %d  segment: %d, %d  position: %s\n", m_id, m_segid_hor, m_segid_ver, pos_str);
 	// sprintf(m_ml_desc, "%d,%d", m_id, pos_num);
-	features_out << m_id << "," << pos_num;
+	features_out1 << m_id << "," << pos_num;
 
 	float score_seglen = m_seglen_hor*m_seglen_ver/40 + m_seglen_hor + m_seglen_ver;
 	score_seglen *= w_seglen;
 	m_score += min(score_seglen, score_clip);
 	sprintf(m_description, "%sseglen: %f  (%f, %f)\n", m_description, score_seglen, m_seglen_hor, m_seglen_ver);
 	// sprintf(m_ml_desc, "%s,%f,%f", m_ml_desc, m_seglen_hor/img_size.width, m_seglen_ver/img_size.height);
-	features_out << "," << m_seglen_hor/img_size.width << "," << m_seglen_ver/img_size.height;
+	features_out1 << "," << m_seglen_hor/img_size.width << "," << m_seglen_ver/img_size.height;
 
 	float score_segdist = -sqrtf(powf(m_segdist_hor, 2) + powf(m_segdist_ver, 2));
 	score_segdist *= w_segdist;
 	m_score += max(score_segdist, -score_clip);
 	sprintf(m_description, "%ssegdist: %f  (%f, %f)\n", m_description, score_segdist, m_segdist_hor, m_segdist_ver);
 	// sprintf(m_ml_desc, "%s,%f,%f", m_ml_desc, m_segdist_hor/img_size.width, m_segdist_ver/img_size.height);
-	features_out << "," << m_segdist_hor/img_size.width << "," << m_segdist_ver/img_size.height;
+	features_out1 << "," << m_segdist_hor/img_size.width << "," << m_segdist_ver/img_size.height;
 
 	float score_cross_degree = -powf(m_cross_degree - F_PI/2, 2)
 														-powf(angle_sub(m_segdeg_hor, 0), 2) / 2
@@ -143,7 +143,7 @@ void Intersection::get_features() {
 	sprintf(m_description, "%scross_degree: %f  (%f, %f, %f)\n", m_description, score_cross_degree,
 							m_cross_degree*180/F_PI, m_segdeg_hor*180/F_PI, m_segdeg_ver*180/F_PI);
 	// sprintf(m_ml_desc, "%s,%f,%f,%f", m_ml_desc, fabs(m_cross_degree), fabs(m_segdeg_hor), fabs(m_segdeg_ver));
-	features_out << "," << fabs(m_cross_degree) << "," << fabs(m_segdeg_hor) << "," << fabs(m_segdeg_ver);
+	features_out1 << "," << fabs(m_cross_degree) << "," << fabs(m_segdeg_hor) << "," << fabs(m_segdeg_ver);
 
 	float score_position = 0;
 	if (m_pos_hor == LEFT)
@@ -168,7 +168,7 @@ void Intersection::get_features() {
 	else if (m_pos_ver == BOTTOM)
 		dist_y = fabs(m_cross_point.y / img_size.height - 0.95);
 	// sprintf(m_ml_desc, "%s,%f,%f", m_ml_desc, dist_x, dist_y);
-	features_out << "," << dist_x << "," << dist_y << endl;
+	features_out1 << "," << dist_x << "," << dist_y << endl;
 
 	sprintf(m_description, "%sscore... %f\n", m_description, m_score);
 

@@ -17,6 +17,9 @@ all: $(TARGET)
 test: test.cp utility.cpp segment.cpp
 	$(CXX) -o test_exe $(CXXFLAGS) $^ $(LDLIBS)
 
+match: match.cp
+	$(CXX) -o match_exe $(CXXFLAGS) $^ $(LDLIBS)
+
 $(TARGET): $(OBJECTS)
 	$(CXX) $(WALL) -o $@ $^ $(LDLIBS)
 

@@ -36,7 +36,7 @@ private:
 		TOP,
 		BOTTOM
 	};
-	int m_seg_hor_id, m_seg_ver_id;
+	int m_segid_hor, m_segid_ver;
 	float m_seglen_hor, m_seglen_ver;
 	float m_segdist_hor, m_segdist_ver;
 	float m_cross_degree;
@@ -52,6 +52,8 @@ public:
 	static void get_intersections(std::vector<Segment>& segments, std::vector<Intersection>& intersections);
 	float get_score() const { return m_score; }
 	cv::Point2f get_cross_point() { return m_cross_point; }
+	float get_segdeg_hor() const { return m_segdeg_hor; }
+	float get_segdeg_ver() const { return m_segdeg_ver; }
 	bool is_top() const { return m_pos_ver == TOP; }
 	bool is_bottom() const { return m_pos_ver == BOTTOM; }
 	bool is_left() const { return m_pos_hor == LEFT; }
@@ -92,6 +94,7 @@ extern const float INF;
 extern cv::Size img_size;
 extern int img_avglen;
 
-extern std::ofstream features_out;
+extern std::ofstream features_out1;
+extern std::ofstream features_out2;
 
 #endif

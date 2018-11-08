@@ -28,7 +28,8 @@ const float INF = 1e7;
 cv::Size img_size;
 int img_avglen;
 
-ofstream features_out;
+ofstream features_out1;
+ofstream features_out2;
 
 int main(int argc, char** argv) {
   double start = double(cv::getTickCount());
@@ -53,7 +54,8 @@ int main(int argc, char** argv) {
     return -1;
   }
 
-  features_out = ofstream(folder_name + "/ml_data.csv");
+  features_out1 = ofstream(folder_name + "/ml_data1.csv");
+  features_out2 = ofstream(folder_name + "/ml_data2.csv");
 
   init(image);
   cv::namedWindow("original image", cv::WINDOW_NORMAL);
@@ -135,6 +137,8 @@ int main(int argc, char** argv) {
   cv::imwrite("intersection_detected.jpeg", processed);
 
   vector<Intersection> inters_lt, inters_rt, inters_lb, inters_rb;
+  // vector<int> remain(4, POINT_IN_SECTION);
+  // int remain = POINT_NUM;
   for (int i = 0; i < intersections.size(); i++) {
     Intersection& inter = intersections[i];
     if (inter.is_top()) {
@@ -161,6 +165,20 @@ int main(int argc, char** argv) {
   assert(!inters_rt.empty());
   assert(!inters_lb.empty());
   assert(!inters_rb.empty());
+
+  // 外部で求めたスコアを読み込み
+  ifstream ml_score2(folder_name + "/score2.csv");
+  if (!ml_score2) {
+    cerr << "Cannot open " << folder_name << "/score2.csv" << endl;
+    exit(1);
+  }
+  vector<float> scores2;
+  for (int i = 0; i < indice.size(); i++) {
+    string str;
+    getline(ml_score2, str);
+    scores2.push_back(stof(str));
+  }
+
   float best_score = -INF;
   int idx_lt, idx_rt, idx_lb, idx_rb;
   for (int i = 0; i < indice.size(); i++) {
@@ -169,22 +187,44 @@ int main(int argc, char** argv) {
     Intersection& inter_lb = inters_lb[indice[i][2]];
     Intersection& inter_rb = inters_rb[indice[i][3]];
 
-    float score = (inter_lt.get_score() + inter_rt.get_score()
-                    + inter_lb.get_score() + inter_rb.get_score()) / 4;
+    float lt_score = inter_lt.get_score();
+    float rt_score = inter_rt.get_score();
+    float lb_score = inter_lb.get_score();
+    float rb_score = inter_rb.get_score();
 
     cv::Point2f v1 = inter_rt.get_cross_point() - inter_lt.get_cross_point();
     cv::Point2f v2 = inter_rb.get_cross_point() - inter_rt.get_cross_point();
     cv::Point2f v3 = inter_lb.get_cross_point() - inter_rb.get_cross_point();
     cv::Point2f v4 = inter_lt.get_cross_point() - inter_lb.get_cross_point();
-    float deg1 = acosf(v4.dot(v1) / cv::norm(v4) / cv::norm(v1));
-    float deg2 = acosf(v1.dot(v2) / cv::norm(v1) / cv::norm(v2));
-    float deg3 = acosf(v2.dot(v3) / cv::norm(v2) / cv::norm(v3));
-    float deg4 = acosf(v3.dot(v4) / cv::norm(v3) / cv::norm(v4));
 
-    float weight = 500;
+    float dist1 = cv::norm(v1);
+    float dist2 = cv::norm(v2);
+    float dist3 = cv::norm(v3);
+    float dist4 = cv::norm(v4);
+
+    float cross_hor = v1.cross(v3);
+    float cross_ver = v2.cross(v4);
+
+    float lt_deg = angle_sub(atanf(v1.y / (v1.x + EPSILON)), inter_lt.get_segdeg_hor())
+                  + angle_sub(atanf(v4.y / (v4.x + EPSILON)), inter_lt.get_segdeg_ver());
+    float rt_deg = angle_sub(atanf(v1.y / (v1.x + EPSILON)), inter_rt.get_segdeg_hor())
+                  + angle_sub(atanf(v2.y / (v2.x + EPSILON)), inter_rt.get_segdeg_ver());
+    float lb_deg = angle_sub(atanf(v3.y / (v3.x + EPSILON)), inter_lb.get_segdeg_hor())
+                  + angle_sub(atanf(v4.y / (v4.x + EPSILON)), inter_lb.get_segdeg_ver());
+    float rb_deg = angle_sub(atanf(v3.y / (v3.x + EPSILON)), inter_rb.get_segdeg_hor())
+                  + angle_sub(atanf(v2.y / (v2.x + EPSILON)), inter_rb.get_segdeg_ver());
+
+    features_out2  << inter_lt.m_id << "," << inter_rt.m_id << "," << inter_lb.m_id << "," << inter_rb.m_id << ","
+      << lt_score << "," << rt_score << "," << lb_score << "," << rb_score << ","
+      << dist1 << "," << dist2 << "," << dist3 << "," << dist4 << ","
+      << cross_hor << "," << cross_ver << ","
+      << lt_deg << "," << rt_deg << "," << lb_deg << "," << rb_deg << endl;
+
+    float score = lt_score + rt_score + lb_score + rb_score;
     // score -= (powf(angle_sub(deg1, F_PI/2), 2) + powf(angle_sub(deg2, F_PI/2), 2)
     //           + powf(angle_sub(deg1, F_PI/2), 2) + powf(angle_sub(deg2, F_PI/2), 2)) * weight;
 
+    // float score = scores2[i];
     if (best_score < score) {
       best_score = score;
       idx_lt = indice[i][0];
