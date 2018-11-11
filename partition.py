@@ -5,7 +5,7 @@ from itertools import combinations
 from unionfind.unionfind import UnionFind
 
 def partition(src_len, equal):
-    # equal: ndarray 2つの要素が等しいかどうか
+    # equal: ndarray (src_len**2 / 2,) 2つの要素が等しいかどうか
     src_list = list(range(src_len))
     uf = UnionFind(src_list)
 

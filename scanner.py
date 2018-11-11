@@ -46,7 +46,7 @@ def main():
     labels = partition.partition(lines.num, equal)
     labels_num = len(np.unique(labels))
     tmp = utility.draw_lines(main_gray, lines, labels, labels_num)
-    # cv2.imshow("lines detected", tmp)
+    cv2.imshow("lines detected", tmp)
 
     segments = Segments(lines, labels, labels_num, size_gray)
     print(f"Num of segments: {segments.num} => ", end="")
@@ -54,7 +54,7 @@ def main():
     print(segments.num)
 
     tmp = utility.draw_segments(main_gray, segments)
-    # cv2.imshow("setmgents detected", tmp)
+    cv2.imshow("setmgents detected", tmp)
 
     intersections = Intersections(segments, size_gray)
     print(f"Num of intersections: {intersections.num}")
@@ -65,7 +65,7 @@ def main():
     indice = np.argsort(scores)[::-1]
 
     tmp = utility.draw_intersections(main_gray, intersections, indice)
-    # cv2.imshow("intersections detected", tmp)
+    cv2.imshow("intersections detected", tmp)
 
     points_per_section = 1
     vertex_lt = []
@@ -98,7 +98,7 @@ def main():
     idx_rb = vertex_rb[0]
 
     tmp = utility.draw_detected(main_gray, intersections, idx_lt, idx_rt, idx_lb, idx_rb)
-    # cv2.imshow("detected", tmp)
+    cv2.imshow("detected", tmp)
 
     scale = np.array(size_color) / np.array(size_gray)
     scale = scale[::-1]    # 縦横 => 横縦
@@ -119,6 +119,7 @@ def main():
     main_color = cv2.warpPerspective(main_color, trans_mat, size_color[::-1])
 
     # cv2.imshow("warped", main_color)
+    # cv2.waitKey()
 
     if len(subfilenames) > 0:
         sub_colors = []

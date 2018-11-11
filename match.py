@@ -19,7 +19,10 @@ def homography(main_color, main_gray, sub_colors):
         kps, dscs = akaze.detectAndCompute(sub_grays[i], None)
         matches = bf.match(main_dscs, dscs)
         matches.sort(key=lambda m: m.distance)
-        num_good_matches = min(int(len(matches) * 0.1), 100)
+        num_good_matches = min(int(len(matches) * 0.5), 100)
+        if num_good_matches < 10:
+            num_good_matches = len(matches)
+        assert num_good_matches >= 4, f"Num of matches is too low. ({num_good_matches})"
         print(f"Num of matches: {len(matches)}")
         print(f"Num of good matches: {num_good_matches}")
         matches = matches[:num_good_matches]
@@ -113,7 +116,7 @@ def blend(main_color, main_gray, sub_colors):
 
     img_rgb = main_shrinked
     img_rgb[:, :, 2] = np.clip(bright_margin * 10, 0, 255)
-    cv2.imshow("bright_margin", img_rgb)
+    # cv2.imshow("bright_margin", img_rgb)
 
     main_weight = cv2.resize(main_weight, size_color[::-1])   # もとの画像サイズに合わせる
     blended = main_color * main_weight[:, :, np.newaxis]
