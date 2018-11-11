@@ -20,16 +20,12 @@ def main():
     subfilenames = glob.glob(foldername + "/sub_[0-9].jpeg")
     datafilename = os.path.join(foldername, "data.csv")
 
-    img_color = cv2.imread(mainfilename)
-    assert img_color is not None, f"Cannot read {mainfilename}"
-    main_gray = cv2.cvtColor(img_color, cv2.COLOR_BGR2GRAY)
-    size_color = np.array(img_color.shape)
-
-    if size_color[0] > size_color[1] and size_color[0] > 600:
-        main_gray = cv2.resize(main_gray, (600, 600*size_color[1]//size_color[0]))
-    elif size_color[0] < size_color[1] and size_color[1] > 600:
-        main_gray = cv2.resize(main_gray, (600*size_color[0]//size_color[1]), 600)
-    size_gray = np.array(main_gray.shape)
+    main_color = cv2.imread(mainfilename)
+    assert main_color is not None, f"Cannot read {mainfilename}"
+    main_gray = cv2.cvtColor(main_color, cv2.COLOR_BGR2GRAY)
+    size_color = main_color.shape[:2]
+    main_gray = utility.shrink_img(main_gray)    # 処理速度を上げるため縮小する(最大600pixel)
+    size_gray = main_gray.shape
 
     length_threshold = 20
     distance_threshold = 1.4142
@@ -50,7 +46,7 @@ def main():
     labels = partition.partition(lines.num, equal)
     labels_num = len(np.unique(labels))
     tmp = utility.draw_lines(main_gray, lines, labels, labels_num)
-    cv2.imshow("lines detected", tmp)
+    # cv2.imshow("lines detected", tmp)
 
     segments = Segments(lines, labels, labels_num, size_gray)
     print(f"Num of segments: {segments.num} => ", end="")
@@ -58,7 +54,7 @@ def main():
     print(segments.num)
 
     tmp = utility.draw_segments(main_gray, segments)
-    cv2.imshow("setmgents detected", tmp)
+    # cv2.imshow("setmgents detected", tmp)
 
     intersections = Intersections(segments, size_gray)
     print(f"Num of intersections: {intersections.num}")
@@ -69,7 +65,7 @@ def main():
     indice = np.argsort(scores)[::-1]
 
     tmp = utility.draw_intersections(main_gray, intersections, indice)
-    cv2.imshow("intersections detected", tmp)
+    # cv2.imshow("intersections detected", tmp)
 
     points_per_section = 1
     vertex_lt = []
@@ -102,9 +98,9 @@ def main():
     idx_rb = vertex_rb[0]
 
     tmp = utility.draw_detected(main_gray, intersections, idx_lt, idx_rt, idx_lb, idx_rb)
-    cv2.imshow("detected", tmp)
+    # cv2.imshow("detected", tmp)
 
-    scale = np.array(img_color.shape[:2]) / size_gray
+    scale = np.array(size_color) / np.array(size_gray)
     scale = scale[::-1]    # 縦横 => 横縦
     src_points = np.array([ \
         intersections.cross_pnt[idx_lt] * scale, \
@@ -114,15 +110,15 @@ def main():
     ], dtype=np.float32)
     dst_points = np.array([ \
         (0, 0),
-        (img_color.shape[1], 0),
-        (0, img_color.shape[0]),
-        (img_color.shape[1], img_color.shape[0])
+        (size_color[1], 0),
+        (0, size_color[0]),
+        (size_color[1], size_color[0])
     ], dtype=np.float32)
 
     trans_mat = cv2.getPerspectiveTransform(src_points, dst_points)
-    img_color = cv2.warpPerspective(img_color, trans_mat, (img_color.shape[:2][::-1]))
+    main_color = cv2.warpPerspective(main_color, trans_mat, size_color[::-1])
 
-    cv2.imshow("warped", img_color)
+    # cv2.imshow("warped", main_color)
 
     if len(subfilenames) > 0:
         sub_colors = []
@@ -130,9 +126,9 @@ def main():
             sub_color = cv2.imread(filename)
             assert sub_color is not None, f"Cannot read {filename}"
             sub_colors.append(sub_color)
-        sub_colors, matched_pnts = match.homography(img_color, sub_colors)
-        blended = match.blend(img_color, sub_colors, matched_pnts)
-        cv2.imshow("blended", blended)
+        sub_colors = match.homography(main_color, main_gray, sub_colors)
+        blended = match.blend(main_color, main_gray, sub_colors)
+        # cv2.imshow("blended", blended)
         cv2.imwrite("blended.jpeg", blended)
 
     duration_ms = (cv2.getTickCount() - start) * 1000 / cv2.getTickFrequency()
