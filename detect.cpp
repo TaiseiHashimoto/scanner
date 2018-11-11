@@ -41,14 +41,15 @@ int main(int argc, char** argv) {
   }
   string folder_name = parser.get<string>("@input");
 
-  cv::Mat image = cv::imread(folder_name + "/img.jpeg", cv::IMREAD_GRAYSCALE);
+  cv::Mat image_color = cv::imread(folder_name + "/img.jpeg");
+  cv::Mat image;
+  cv::cvtColor(image_color, image, cv::COLOR_BGR2GRAY);
   assert(!image.empty());
-  cv::Mat org_image = image.clone();
+  cv::Size org_size = image_color.size();
   // TODO: clean code
   if (image.size().width > 1000) {  // 縮小して計算時間を短縮する
     cv::resize(image, image, cv::Size(450, 600), cv::INTER_AREA);
   }
-  cv::Size org_size = org_image.size();
 
   if (image.empty()) {
     return -1;
@@ -81,6 +82,10 @@ int main(int argc, char** argv) {
   cout << "num of lines = " << lines.size() << " => ";
   remove_central_lines(lines);
   cout << lines.size() << endl;
+
+  // double dm = (double(cv::getTickCount()) - start) * 1000 / cv::getTickFrequency();
+  // cout << "It took " << dm << " ms." << endl;
+  // exit(0);
 
   std::vector<int> labels;
   int labels_num = cv::partition(lines, labels, line_equal);
@@ -276,12 +281,12 @@ int main(int argc, char** argv) {
     cv::Point2f(0, org_size.height),
     cv::Point2f(org_size.width, org_size.height)
   };
-  cv::Mat M = getPerspectiveTransform(src_points, dst_points);
-  cv::warpPerspective(org_image, processed, M, org_size);
+  cv::Mat trans_mat = getPerspectiveTransform(src_points, dst_points);
+  cv::warpPerspective(image_color, processed, trans_mat, org_size);
   cv::namedWindow("homography result", cv::WINDOW_NORMAL);
   cv::imshow("homography result", processed);
 
-  cv::imwrite("detect_out.jpeg", processed);
+  cv::imwrite("detected.jpeg", processed);
 
   double duration_ms = (double(cv::getTickCount()) - start) * 1000 / cv::getTickFrequency();
   cout << "It took " << duration_ms << " ms." << endl;

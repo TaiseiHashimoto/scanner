@@ -1,0 +1,165 @@
+94: 10, 12  rejected (cross_deg[1.2186592817306519] is small)
+90: 10, 4  rejected (cross point[31.253357  -5.0254784] is in center)
+91: 10, 5  rejected (cross point[33.99492   -4.4447327] is in center)
+100: 10, 19  rejected (cross point[44.227066 -2.277256] is in center)
+102: 10, 21  rejected (cross point[53.924316   -0.22309113] is in center)
+104: 10, 23  rejected (cross point[ 9.393326 -9.656082] is in center)
+6: 0, 15  rejected (cross point[120.42355   52.082657] is not either left or right)
+7: 0, 16  rejected (cross point[115.89734   52.772987] is not either left or right)
+8: 0, 17  rejected (cross point[117.05507   52.596413] is not either left or right)
+13: 0, 22  rejected (cross point[115.2664    52.869217] is not either left or right)
+21: 1, 15  rejected (cross point[123.02301   17.768694] is not either left or right)
+22: 1, 16  rejected (cross point[118.711334  17.726479] is not either left or right)
+23: 1, 17  rejected (cross point[120.842834  17.747347] is not either left or right)
+28: 1, 22  rejected (cross point[118.10093   17.720503] is not either left or right)
+36: 2, 15  rejected (cross point[121.47313   38.227608] is not either left or right)
+37: 2, 16  rejected (cross point[117.04056  38.53477] is not either left or right)
+38: 2, 17  rejected (cross point[118.59514  38.42704] is not either left or right)
+43: 2, 22  rejected (cross point[116.418915  38.57785 ] is not either left or right)
+51: 3, 15  rejected (cross point[122.47601   24.989307] is not either left or right)
+52: 3, 16  rejected (cross point[118.12347   25.047949] is not either left or right)
+53: 3, 17  rejected (cross point[120.052155  25.021963] is not either left or right)
+58: 3, 22  rejected (cross point[117.50936   25.056221] is not either left or right)
+66: 6, 15  rejected (cross point[121.68179   35.473343] is not either left or right)
+67: 6, 16  rejected (cross point[117.30549   35.235363] is not either left or right)
+68: 6, 17  rejected (cross point[118.932434  35.323833] is not either left or right)
+73: 6, 22  rejected (cross point[116.69116   35.201958] is not either left or right)
+81: 9, 15  rejected (cross point[122.6059    23.274813] is not either left or right)
+82: 9, 16  rejected (cross point[118.31135   22.708042] is not either left or right)
+83: 9, 17  rejected (cross point[120.275475  22.967257] is not either left or right)
+88: 9, 22  rejected (cross point[117.70518   22.628044] is not either left or right)
+96: 10, 15  rejected (cross point[123.27312   14.467047] is not either left or right)
+97: 10, 16  rejected (cross point[119.04494   13.571394] is not either left or right)
+98: 10, 17  rejected (cross point[121.24605   14.037653] is not either left or right)
+103: 10, 22  rejected (cross point[118.44577   13.444473] is not either left or right)
+111: 11, 15  rejected (cross point[119.08352  69.77181] is not either left or right)
+112: 11, 16  rejected (cross point[114.54021  69.67539] is not either left or right)
+113: 11, 17  rejected (cross point[115.19722  69.68934] is not either left or right)
+118: 11, 22  rejected (cross point[113.91215  69.66206] is not either left or right)
+126: 13, 15  rejected (cross point[115.08496 122.55465] is not either left or right)
+162: 25, 21  rejected (cross point[114.318054 579.42944 ] is not either left or right)
+0: 0, 4 is_left[True] rejected (segdist_hor[294.9685974121094] is too big)
+1: 0, 5 is_left[True] rejected (segdist_hor[291.2693786621094] is too big)
+4: 0, 12 is_left[True] rejected (segdist_hor[296.19970703125] is too big)
+9: 0, 18 is_left[True] rejected (segdist_hor[237.7396240234375] is too big)
+10: 0, 19 is_left[True] rejected (segdist_hor[283.321044921875] is too big)
+11: 0, 20 is_left[True] rejected (segdist_hor[230.3660430908203] is too big)
+12: 0, 21 is_left[True] rejected (segdist_hor[264.8988037109375] is too big)
+14: 0, 23 is_left[True] rejected (segdist_hor[313.1146545410156] is too big)
+30: 2, 4 is_left[True] rejected (segdist_hor[280.9491882324219] is too big)
+31: 2, 5 is_left[True] rejected (segdist_hor[277.5592041015625] is too big)
+34: 2, 12 is_left[True] rejected (segdist_hor[285.4256896972656] is too big)
+40: 2, 19 is_left[True] rejected (segdist_hor[268.9542236328125] is too big)
+42: 2, 21 is_left[True] rejected (segdist_hor[253.29547119140625] is too big)
+44: 2, 23 is_left[True] rejected (segdist_hor[300.0782165527344] is too big)
+62: 6, 7 is_left[False] rejected (segdist_hor[251.01718139648438] is too big)
+63: 6, 8 is_left[False] rejected (segdist_hor[252.37107849121094] is too big)
+65: 6, 14 is_left[False] rejected (segdist_hor[247.5468292236328] is too big)
+107: 11, 7 is_left[False] rejected (segdist_hor[234.29330444335938] is too big)
+108: 11, 8 is_left[False] rejected (segdist_hor[236.42227172851562] is too big)
+110: 11, 14 is_left[False] rejected (segdist_hor[232.39407348632812] is too big)
+122: 13, 7 is_left[False] rejected (segdist_hor[229.58697509765625] is too big)
+123: 13, 8 is_left[False] rejected (segdist_hor[233.1654815673828] is too big)
+125: 13, 14 is_left[False] rejected (segdist_hor[230.61141967773438] is too big)
+137: 24, 7 is_left[False] rejected (segdist_hor[243.79701232910156] is too big)
+138: 24, 8 is_left[False] rejected (segdist_hor[259.44805908203125] is too big)
+140: 24, 14 is_left[False] rejected (segdist_hor[269.1164245605469] is too big)
+92: 10, 7  rejected (cross point[421.17566  77.57167] is not either top or bottom)
+121: 13, 5  rejected (cross point[ 34.47888 122.79971] is not either top or bottom)
+27: 1, 21  is_top[True] rejected (segdist_ver[328.6815185546875] is too big)
+29: 1, 23  is_top[True] rejected (segdist_ver[442.6781311035156] is too big)
+57: 3, 21  is_top[True] rejected (segdist_ver[319.8676452636719] is too big)
+59: 3, 23  is_top[True] rejected (segdist_ver[432.84405517578125] is too big)
+72: 6, 21  is_top[True] rejected (segdist_ver[313.73974609375] is too big)
+74: 6, 23  is_top[True] rejected (segdist_ver[429.877685546875] is too big)
+87: 9, 21  is_top[True] rejected (segdist_ver[331.39410400390625] is too big)
+89: 9, 23  is_top[True] rejected (segdist_ver[450.91876220703125] is too big)
+119: 11, 23  is_top[True] rejected (segdist_ver[391.7881164550781] is too big)
+134: 13, 23  is_top[True] rejected (segdist_ver[336.39306640625] is too big)
+136: 24, 5  is_top[False] rejected (segdist_ver[428.595703125] is too big)
+139: 24, 12  is_top[False] rejected (segdist_ver[393.1490478515625] is too big)
+151: 25, 5  is_top[False] rejected (segdist_ver[487.18511962890625] is too big)
+152: 25, 7  is_top[False] rejected (segdist_ver[513.773681640625] is too big)
+153: 25, 8  is_top[False] rejected (segdist_ver[478.3086853027344] is too big)
+154: 25, 12  is_top[False] rejected (segdist_ver[456.8315124511719] is too big)
+2: 0, 7  posnum[1] position[425.41302     5.5658197]
+3: 0, 8  posnum[1] position[425.29135     5.5843735]
+5: 0, 14  posnum[1] position[418.97772    6.547326]
+15: 1, 4  posnum[0] position[31.052284 16.868229]
+16: 1, 5  posnum[0] position[34.076103 16.897835]
+17: 1, 7  posnum[1] position[424.52115   20.720589]
+18: 1, 8  posnum[1] position[424.88293   20.724133]
+19: 1, 12  posnum[0] position[22.284363 16.782385]
+20: 1, 14  posnum[1] position[419.05493   20.667072]
+24: 1, 18  posnum[0] position[92.30371  17.467928]
+25: 1, 19  posnum[0] position[43.613968 16.991219]
+26: 1, 20  posnum[0] position[96.7176   17.511143]
+32: 2, 7  posnum[1] position[424.7276    17.213045]
+33: 2, 8  posnum[1] position[424.97815   17.195683]
+35: 2, 14  posnum[1] position[419.03824   17.607302]
+39: 2, 18  posnum[0] position[89.334595 40.454704]
+41: 2, 20  posnum[0] position[95.40198  40.034256]
+45: 3, 4  posnum[0] position[30.966366 26.2222  ]
+46: 3, 5  posnum[0] position[34.11141  26.179829]
+47: 3, 7  posnum[1] position[424.5094    20.920063]
+48: 3, 8  posnum[1] position[424.87778   20.915098]
+49: 3, 12  posnum[0] position[23.661531 26.320618]
+50: 3, 14  posnum[1] position[419.05673   20.993525]
+54: 3, 18  posnum[0] position[91.27791  25.409634]
+55: 3, 19  posnum[0] position[43.325542 26.055689]
+56: 3, 20  posnum[0] position[96.26016  25.342508]
+60: 6, 4  posnum[0] position[30.926727 30.538193]
+61: 6, 5  posnum[0] position[34.128647 30.712309]
+64: 6, 12  posnum[0] position[24.217812 30.17337 ]
+69: 6, 18  posnum[0] position[90.199165 33.761356]
+70: 6, 19  posnum[0] position[43.161736 31.203518]
+71: 6, 20  posnum[0] position[95.75076  34.063244]
+75: 9, 4  posnum[0] position[31.10434  11.198975]
+76: 9, 5  posnum[0] position[34.055923 11.588507]
+77: 9, 7  posnum[1] position[422.04535   62.793068]
+78: 9, 8  posnum[1] position[423.74213  63.017  ]
+79: 9, 12  posnum[0] position[21.291199  9.903894]
+80: 9, 14  posnum[1] position[419.28345   62.428566]
+84: 9, 18  posnum[0] position[92.07413  19.245407]
+85: 9, 19  posnum[0] position[43.745193 12.867241]
+86: 9, 20  posnum[0] position[96.58156  19.840273]
+93: 10, 8  posnum[1] position[423.33716  78.02954]
+95: 10, 14  posnum[1] position[419.36414  77.18794]
+99: 10, 18  posnum[0] position[93.50578   8.161442]
+101: 10, 20  posnum[0] position[97.21779   8.947754]
+105: 11, 4  posnum[0] position[30.583618 67.893654]
+106: 11, 5  posnum[0] position[34.27037 67.97189]
+109: 11, 12  posnum[0] position[29.661179 67.87408 ]
+114: 11, 18  posnum[0] position[85.63952 69.06206]
+115: 11, 19  posnum[0] position[41.98658 68.13565]
+116: 11, 20  posnum[0] position[93.69646 69.23304]
+117: 11, 21  posnum[0] position[61.08882 68.54104]
+120: 13, 4  posnum[0] position[ 30.079185 122.81309 ]
+124: 13, 12  posnum[0] position[ 37.590187 122.79025 ]
+127: 13, 16  posnum[0] position[110.2932   122.569214]
+128: 13, 17  posnum[0] position[109.44938 122.57178]
+129: 13, 18  posnum[0] position[ 78.715836 122.66522 ]
+130: 13, 19  posnum[0] position[ 40.247787 122.78217 ]
+131: 13, 20  posnum[0] position[ 90.577515 122.62916 ]
+132: 13, 21  posnum[0] position[ 66.73179 122.70165]
+133: 13, 22  posnum[0] position[109.64534 122.57118]
+135: 24, 4  posnum[2] position[ 26.429771 520.1417  ]
+141: 24, 15  posnum[2] position[ 85.222275 516.75586 ]
+142: 24, 16  posnum[2] position[ 78.612236 517.13654 ]
+143: 24, 17  posnum[2] position[ 66.48793 517.8348 ]
+144: 24, 18  posnum[2] position[ 27.382637 520.08685 ]
+145: 24, 19  posnum[2] position[ 27.606285 520.074   ]
+146: 24, 20  posnum[2] position[ 67.49642 517.7767 ]
+147: 24, 21  posnum[2] position[107.65352 515.46405]
+148: 24, 22  posnum[2] position[ 77.822296 517.182   ]
+149: 24, 23  posnum[2] position[ 31.548943 519.8469  ]
+150: 25, 4  posnum[2] position[ 25.8982 578.0153]
+155: 25, 14  posnum[3] position[422.13855 584.3526 ]
+156: 25, 15  posnum[2] position[ 80.51541 578.88885]
+157: 25, 16  posnum[2] position[ 73.66276 578.77924]
+158: 25, 17  posnum[2] position[ 59.887768 578.5589  ]
+159: 25, 18  posnum[2] position[ 19.912626 577.91956 ]
+160: 25, 19  posnum[2] position[ 25.762709 578.0131  ]
+161: 25, 20  posnum[2] position[ 63.94227 578.6238 ]
+163: 25, 22  posnum[2] position[ 72.85589 578.7663 ]
+164: 25, 23  posnum[2] position[ 33.988247 578.1447  ]
