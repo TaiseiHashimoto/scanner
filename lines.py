@@ -16,7 +16,7 @@ class Lines:
         self.theta = self.theta[~arr]
         self.mupnts = self.mupnts[~arr]
 
-    def remove_central(self, img_size, ratio=0.25):
+    def remove_central(self, img_size, ratio=0.2):
         mx = self.mupnts[:, 0]
         my = self.mupnts[:, 1]
         cond = (mx < img_size[1] * ratio) | (mx > img_size[1] * (1-ratio)) | \

@@ -1,30 +1,27 @@
 import numpy as np
 import pickle
 from sklearn.preprocessing import StandardScaler
+import pandas as pd
 
-
-def get_score(data):
-	with open("ml_model.pickle", "rb") as f:
-	    model = pickle.load(f)
-
-	stdsc = StandardScaler()
-	data = stdsc.fit_transform(data)
-	# ラベル1(positive)の確率
-	scores = model.predict_proba(data)[:, 1]
-	return scores
+def get_score(df):
+    with open("ml_model.pickle", "rb") as f:
+        model = pickle.load(f)
+    data = df.iloc[:, 2:].astype(np.float64)
+    scores = model.predict_proba(data)[:, 1]  # ラベル1(positive)の確率
+    return scores
 
 def prepare_data(intersections, img_size):
-	height, width = img_size
-	n_features = 9
-	data = np.empty((intersections.num, n_features), dtype=np.float32)
-	data[:, 0] = intersections.seglen_hor / width
-	data[:, 1] = intersections.seglen_ver / height
-	data[:, 2] = intersections.segdist_hor / width
-	data[:, 3] = intersections.segdist_ver / height
-	data[:, 4] = intersections.cross_deg
-	data[:, 5] = np.abs(intersections.segdeg_hor)
-	data[:, 6] = np.abs(intersections.segdeg_ver)
-	data[:, 7] = intersections.dist_hor
-	data[:, 8] = intersections.dist_ver
-	
-	return data
+    height, width = img_size
+    data = pd.DataFrame()
+    data['id'] = list(range(intersections.num))
+    data['posnum'] = intersections.posnum
+    data['seglen_hor'] = intersections.seglen_hor / width
+    data['seglen_ver'] = intersections.seglen_ver / height
+    data['segdist_hor'] = intersections.segdist_hor / width
+    data['segdist_ver'] = intersections.segdist_ver / height
+    data['segdeg_hor'] = np.abs(intersections.segdeg_hor)
+    data['segdeg_ver'] = np.abs(intersections.segdeg_ver)
+    data['cross_deg'] = intersections.cross_deg
+    data['dist_hor'] = intersections.dist_hor
+    data['dist_ver'] = intersections.dist_ver
+    return data

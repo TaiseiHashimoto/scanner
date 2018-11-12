@@ -60,7 +60,7 @@ class Segments:
         self.is_hor = np.array(self.is_hor, dtype=np.bool)
         self.is_ver = np.array(self.is_ver, dtype=np.bool)
 
-    def remove_central(self, img_size, ratio=0.25):
+    def remove_central(self, img_size, ratio=0.2):
         mx = self.exmupnts[:, 0]
         my = self.exmupnts[:, 1]
         cond = (mx < img_size[1] * ratio) | (mx > img_size[1] * (1-ratio)) | \

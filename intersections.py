@@ -2,7 +2,7 @@ import numpy as np
 import utility
 
 class Intersections:
-    def __init__(self, segments, img_size, ratio=0.25):
+    def __init__(self, segments, img_size, ratio=0.2):
         f = open("report_intersection.txt", "w")
 
         img_height, img_width = img_size
@@ -23,14 +23,17 @@ class Intersections:
         cross_deg = np.empty((indice_len,), dtype=np.float32)
         segdeg_hor = np.empty((indice_len,), dtype=np.float32)
         segdeg_ver = np.empty((indice_len,), dtype=np.float32)
-        cross_deg[valid] = np.abs(utility.angle_normalize(th_hor[valid] - th_ver[valid]))
-        segdeg_hor[valid] = th_hor
-        segdeg_ver[valid] = th_ver
+        cross_deg = np.abs(utility.angle_normalize(th_hor - th_ver))
+        segdeg_hor = th_hor
+        segdeg_ver = th_ver
 
         old_valid = valid.copy()
         valid &= cross_deg * 180 > line_cross_degree * np.pi
         for idx in np.where(old_valid & ~valid)[0]:
-            f.write(f"{idx}: {indice[idx, 0]}, {indice[idx, 1]}  rejected (cross_deg[{cross_deg[idx]}] is small)\n")
+            f.write(f"{indice[idx, 0]}, {indice[idx, 1]}  rejected (cross_deg[{cross_deg[idx]}] is small)\n")
+
+        hor_pnt1 = hor_pnt1[valid]
+        ver_pnt1 = ver_pnt1[valid]
 
         x = ver_pnt1[valid] - hor_pnt1[valid]
         d1 = hor_pnt2[valid] - hor_pnt1[valid]
@@ -45,7 +48,7 @@ class Intersections:
                 (cross_pnt[:, 1] >= 0) & \
                 (cross_pnt[:, 1] <= img_height)
         for idx in np.where(old_valid & ~valid)[0]:
-            f.write(f"{idx}: {indice[idx, 0]}, {indice[idx, 1]}  rejected (cross point{cross_pnt[idx]} is in center)\n")
+            f.write(f"{indice[idx, 0]}, {indice[idx, 1]}  rejected (cross point{cross_pnt[idx]} is in center or out of image)\n")
 
         left = cross_pnt[:, 0] < np.minimum(hor_pnt2[:, 0], img_width * ratio)
         right = cross_pnt[:, 0] > np.maximum(hor_pnt1[:, 0], img_width * (1-ratio))
@@ -53,46 +56,37 @@ class Intersections:
         is_right = np.zeros((indice_len,), dtype=np.bool)
         is_left[valid & left] = True
         is_right[valid & right] = True
-        segdist_hor = np.empty((indice_len,), dtype=np.float32)
+        segdist_hor = np.zeros((indice_len,), dtype=np.float32)
         segdist_hor[valid & left] = np.linalg.norm(hor_pnt1[valid & left] - cross_pnt[valid & left], axis=1)
         segdist_hor[valid & right] = np.linalg.norm(hor_pnt2[valid & right] - cross_pnt[valid & right], axis=1)
 
         old_valid = valid.copy()
         valid &= left | right
         for idx in np.where(old_valid & ~valid)[0]:
-            f.write(f"{idx}: {indice[idx, 0]}, {indice[idx, 1]}  rejected (cross point{cross_pnt[idx]} is not either left or right)\n")
+            f.write(f"{indice[idx, 0]}, {indice[idx, 1]}  rejected (cross point{cross_pnt[idx]} is not either left or right)\n")
         old_valid = valid.copy()
         valid &= segdist_hor < img_width * 0.5
         for idx in np.where(old_valid & ~valid)[0]:
-            f.write(f"{idx}: {indice[idx, 0]}, {indice[idx, 1]} is_left[{is_left[idx]}] rejected (segdist_hor[{segdist_hor[idx]}] is too big)\n")
+            f.write(f"{indice[idx, 0]}, {indice[idx, 1]} is_left[{is_left[idx]}] rejected (segdist_hor[{segdist_hor[idx]}] is too big)\n")
 
-        # idx = np.where((indice[:, 0] == 1) & (indice[:, 1] == 3))[0][0]
-        # print(idx)
-        # print(hor_pnt1[idx])
-        # print(hor_pnt2[idx])
-        # print(ver_pnt1[idx])
-        # print(ver_pnt2[idx])
-        # print(th_hor[idx]*180/np.pi)
-        # print(th_ver[idx]*180/np.pi)
-        # print(cross_pnt[idx])
         top = cross_pnt[:, 1] < np.minimum(ver_pnt2[:, 1], img_height * ratio)
         bottom = cross_pnt[:, 1] > np.maximum(ver_pnt1[:, 1], img_height * (1-ratio))
         is_top = np.zeros((indice_len,), dtype=np.bool)
         is_bottom = np.zeros((indice_len,), dtype=np.bool)
         is_top[valid & top] = True
         is_bottom[valid & bottom] = True
-        segdist_ver = np.empty((indice_len,), dtype=np.float32)
+        segdist_ver = np.zeros((indice_len,), dtype=np.float32)
         segdist_ver[valid & top] = np.linalg.norm(ver_pnt1[valid & top] - cross_pnt[valid & top], axis=1)
         segdist_ver[valid & bottom] = np.linalg.norm(ver_pnt2[valid & bottom] - cross_pnt[valid & bottom], axis=1)
 
         old_valid = valid.copy()
         valid &= top | bottom
         for idx in np.where(old_valid & ~valid)[0]:
-            f.write(f"{idx}: {indice[idx, 0]}, {indice[idx, 1]}  rejected (cross point{cross_pnt[idx]} is not either top or bottom)\n")
+            f.write(f"{indice[idx, 0]}, {indice[idx, 1]}  rejected (cross point{cross_pnt[idx]} is not either top or bottom)\n")
         old_valid = valid.copy()
         valid &= segdist_ver < img_height * 0.5
         for idx in np.where(old_valid & ~valid)[0]:
-            f.write(f"{idx}: {indice[idx, 0]}, {indice[idx, 1]}  is_top[{is_top[idx]}] rejected (segdist_ver[{segdist_ver[idx]}] is too big)\n")
+            f.write(f"{indice[idx, 0]}, {indice[idx, 1]}  is_top[{is_top[idx]}] rejected (segdist_ver[{segdist_ver[idx]}] is too big)\n")
 
         seglen_hor = np.empty((indice_len,), dtype=np.float32)
         seglen_ver = np.empty((indice_len,), dtype=np.float32)
@@ -106,17 +100,18 @@ class Intersections:
         dist_ver[valid & is_top] = cross_pnt[valid & is_top, 1] / img_height
         dist_ver[valid & is_bottom] = 1 - cross_pnt[valid & is_bottom, 1] / img_height
 
-        for idx in np.where(valid)[0]:
-            if is_left[idx] and is_top[idx]:
-                p = 0
-            if is_right[idx] and is_top[idx]:
-                p = 1
-            if is_left[idx] and is_bottom[idx]:
-                p = 2
-            if is_right[idx] and is_bottom[idx]:
-                p = 3
-            f.write(f"{idx}: {indice[idx, 0]}, {indice[idx, 1]}  posnum[{p}] position{cross_pnt[idx]}\n")
 
+        posnum = np.empty((indice_len,), dtype=np.uint8)
+        posnum[valid & is_left & is_top] = 0
+        posnum[valid & is_right & is_top] = 1
+        posnum[valid & is_left & is_bottom] = 2
+        posnum[valid & is_right & is_bottom] = 3
+
+        for i, idx in enumerate(np.where(valid)[0]):
+            f.write(f"{i}: {indice[idx, 0]}, {indice[idx, 1]}  posnum[{posnum[idx]}] position{cross_pnt[idx]}\n")
+
+        self.num = np.sum(valid)
+        self.posnum = posnum[valid]
         self.cross_deg = cross_deg[valid]
         self.segdeg_hor = segdeg_hor[valid]
         self.segdeg_ver = segdeg_ver[valid]
@@ -131,8 +126,6 @@ class Intersections:
         self.is_bottom = is_bottom[valid]
         self.dist_hor = dist_hor[valid]
         self.dist_ver = dist_ver[valid]
-        self.num = np.sum(valid)
-
 
         f.close()
 
