@@ -2,15 +2,14 @@ import cv2
 import numpy as np
 import utility
 
-def homography(main_color, main_gray, sub_colors):
-    size_color = main_color.shape[:2]
+def align(main_gray, sub_colors):
     size_gray = main_gray.shape
     sub_grays = []
-    sub_shrinked = []
+    sub_shrinkeds = []
     for sub_color in sub_colors:
-        shrinked = utility.shrink_img(sub_color)
-        sub_shrinked.append(shrinked)
-        sub_grays.append(cv2.cvtColor(shrinked, cv2.COLOR_BGR2GRAY))
+        sub_shrinked = utility.shrink_img(sub_color)
+        sub_shrinkeds.append(sub_shrinked)
+        sub_grays.append(cv2.cvtColor(sub_shrinked, cv2.COLOR_BGR2GRAY))
 
     # AKAZEによるおおまかな位置合わせ
     akaze = cv2.AKAZE_create()
@@ -19,7 +18,7 @@ def homography(main_color, main_gray, sub_colors):
 
     bf = cv2.BFMatcher_create(cv2.NORM_HAMMING, True)
 
-    sub_aligned = []    # 位置合わせ済みの画像
+    sub_aligneds = []    # 位置合わせ済みの画像
     for i in range(len(sub_colors)):
         kps, dscs = akaze.detectAndCompute(sub_grays[i], None)
         matches = bf.match(main_dscs, dscs)
@@ -47,118 +46,16 @@ def homography(main_color, main_gray, sub_colors):
         criteria = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, number_of_iterations,  termination_eps)
         try:
             cc, M = cv2.findTransformECC(sub_grays[i], main_gray, M, cv2.MOTION_HOMOGRAPHY, criteria)
-            print(f"cc = {cc}")
         except cv2.error:   # ECCが収束しなかった場合
             print("ECC stopped before convergence")
             continue
 
-        aligned = cv2.warpPerspective(sub_shrinked[i], M, size_gray[::-1])
-        # aligned = cv2.warpPerspective(sub_colors[i], M, size_gray[::-1])
-        cv2.imshow(f"warped", aligned)
-        cv2.waitKey()
+        aligned = cv2.warpPerspective(sub_shrinkeds[i], M, size_gray[::-1])
 
         if cc > 0.6:    # うまくマッチングできない画像は除外する
-            sub_aligned.append(aligned)
-        # sub_aligned.append(aligned)
+            sub_aligneds.append(aligned)
 
-    print(len(sub_aligned))
-    return sub_aligned
-
-def blend(main_color, main_gray, sub_shrinked):
-    size_color = main_color.shape[:2]
-    size_gray = main_gray.shape
-    main_shrinked = utility.shrink_img(main_color)
-    
-    sub_grays = []
-    sub_colors = []
-    for shrinked in sub_shrinked:
-        # shrinked = utility.shrink_img(sub_color)
-        sub_color = cv2.resize(shrinked, size_color[::-1])
-        sub_colors.append(sub_color)
-        sub_grays.append(cv2.cvtColor(shrinked, cv2.COLOR_BGR2GRAY))
-
-    # state: 0 (完全に白飛び) ~ 1 (全く白飛びしていない)
-    main_state = 1 - detect_overexposed(main_shrinked)
-    main_state = cv2.erode(main_state, np.ones((50, 50)))  # 白飛び領域を十分に捉える
-    main_state = cv2.blur(main_state, (50, 50))  # 境界をぼかす
-
-    tmp = cv2.cvtColor(main_gray, cv2.COLOR_GRAY2BGR)
-    tmp[:, :, 2] = main_state * 255
-    cv2.imshow(f"main_state", tmp)
-
-    sub_states = []  
-    for i in range(len(sub_grays)):
-        state = 1 - detect_overexposed(sub_shrinked[i])
-        state = cv2.erode(state, np.ones((10, 10)))    
-        state = cv2.blur(state, (50, 50))
-        state[sub_grays[i] == 0] = 0   # 見切れている場合は黒になる
-        sub_states.append(state)
-        # cv2.imshow(f"original_{i}", sub_shrinked[i])
-    sub_states = np.array(sub_states, dtype=np.float32)
-
-    sub_states_max = np.clip(np.max(sub_states, axis=0), 1e-6, 1)
-    main_weight = np.clip((np.tanh((main_state - 0.93) * 15) + 1.0) * 0.5 + (np.tanh((main_state/sub_states_max - 1.0) * 1.0) + 1.0) * 0.3, 1e-6, 1)
-
-    # match_dists = np.array(match_dists)
-    # match_dists = match_dists / np.mean(match_dists) - 1 
-    sub_weights = []
-    # for state, md in zip(sub_states, match_dists):
-    for state in sub_states:
-        sub_weights.append(np.exp((state - 0.95)*5))# - md*10))
-    sub_weights = np.array(sub_weights)
-    sub_weights_sum = np.sum(sub_weights, axis=0)
-    sub_weights[:, sub_weights_sum > 0] /= sub_weights_sum[sub_weights_sum > 0]
-    sub_weights *= (1 - main_weight)
-
-    # 初めに小さい画像でブレンドして、明度情報を求めておく
-    bld = main_shrinked * main_weight[:, :, np.newaxis]
-    for img, weight in zip(sub_shrinked, sub_weights):
-        bld += img * weight[:, :, np.newaxis]
-    bld = np.clip(bld, 0, 255)
-
-    tmp = main_shrinked.copy()
-    tmp[:, :, 2] = main_weight * 255
-    cv2.imshow(f"main_weight", tmp)
-    for i in range(len(sub_weights)):
-        tmp = sub_shrinked[i].copy()
-        tmp[:, :, 2] = sub_weights[i] * 255
-        cv2.imshow(f"weight", tmp)
-        cv2.waitKey()
-
-    # tmp = np.array(bld, dtype=np.uint8)
-    # cv2.imshow("blended_dark", tmp)
-
-    # HSV画像を用意(明度情報を使う)
-    bld_hsv = cv2.cvtColor(bld, cv2.COLOR_BGR2HSV)
-    sub_vs = []
-    for img in sub_shrinked:
-        sub_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-        sub_vs.append(sub_hsv[:, :, 2])
-
-    # 暗い領域を明るくするため、明るくしてよい余裕を求める
-    bright_margin = np.zeros(size_gray, dtype=np.float32)
-    for img_v, state in zip(sub_vs, sub_states):
-        bright_margin = np.maximum((img_v - bld_hsv[:, :, 2]) * (np.tanh((state - 0.99) * 15) + 1.0) * 0.3, bright_margin)
-
-    # ぼかしをかけることで境目を目立たなくさせる
-    bright_margin = cv2.blur(bright_margin, (20, 20))
-
-    img_rgb = main_shrinked
-    img_rgb[:, :, 2] = np.clip(bright_margin * 10, 0, 255)
-    # cv2.imshow("bright_margin", img_rgb)
-
-    main_weight = cv2.resize(main_weight, size_color[::-1])   # もとの画像サイズに合わせる
-    blended = main_color * main_weight[:, :, np.newaxis]
-    for img, weight in zip(sub_shrinked, sub_weights):
-        blended += cv2.resize(img * weight[:, :, np.newaxis], size_color[::-1])
-    blended = np.clip(blended, 0, 255)
-
-    bright_margin = cv2.resize(bright_margin, size_color[::-1])
-    blended_hsv = cv2.cvtColor(blended, cv2.COLOR_BGR2HSV)
-    blended_hsv[:, :, 2] = np.clip(blended_hsv[:, :, 2] + bright_margin, 0, 255)
-    blended = cv2.cvtColor(blended_hsv, cv2.COLOR_HSV2BGR)
-
-    return blended.astype(np.uint8)
+    return sub_aligneds
 
 def detect_overexposed(img):
     white = np.array([255, 255, 255])
@@ -166,7 +63,7 @@ def detect_overexposed(img):
     img_size = img.shape[:2]
 
     oe_area = np.zeros(img_size, dtype=np.float32)
-    oe_area[dist <= 8] = 1.0
+    oe_area[dist <= 10] = 1.0
     if np.sum(oe_area) == 0:
         return oe_area
     first_dist_mean = np.mean(dist[oe_area == 1.0])
@@ -188,4 +85,8 @@ def detect_overexposed(img):
         # cv2.waitKey()
         if dist_new_max > allowd_dist_max:
             break
+
+    oe_area = cv2.dilate(oe_area, np.ones((50, 50)))  # 白飛び領域を十分に捉える
+    oe_area = cv2.blur(oe_area, (50, 50))  # 境界をぼかす
+
     return oe_area
