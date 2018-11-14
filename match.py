@@ -23,11 +23,11 @@ def align(main_gray, sub_colors):
         kps, dscs = akaze.detectAndCompute(sub_grays[i], None)
         matches = bf.match(main_dscs, dscs)
         matches.sort(key=lambda m: m.distance)
-        num_good_matches = min(int(len(matches) * 0.3), 100)
+        num_good_matches = min(int(len(matches) * 0.2), 100)
         if num_good_matches < 10: num_good_matches = len(matches)
         assert num_good_matches >= 4, f"Num of matches is too low. ({num_good_matches})"
-        # print(f"Num of matches: {len(matches)}")
-        # print(f"Num of good matches: {num_good_matches}")
+        print(f"Num of matches: {len(matches)}")
+        print(f"Num of good matches: {num_good_matches}")
         matches = matches[:num_good_matches]
 
         tmp = cv2.drawMatches(main_gray, main_kps, sub_grays[i], kps, matches, None)
@@ -42,6 +42,12 @@ def align(main_gray, sub_colors):
         pnts = np.array(pnts)
 
         M = cv2.findHomography(pnts, main_pnts, cv2.RANSAC)[0].astype(np.float32)
+
+
+        tmp = cv2.warpPerspective(sub_shrinkeds[i], M, size_gray[::-1])
+        cv2.imwrite(f"warped_{i}.jpeg", tmp)
+
+
         
         # ECCによる精密な位置合わせ
         number_of_iterations = 10
@@ -49,14 +55,14 @@ def align(main_gray, sub_colors):
         criteria = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, number_of_iterations,  termination_eps)
         try:
             cc, M = cv2.findTransformECC(sub_grays[i], main_gray, M, cv2.MOTION_HOMOGRAPHY, criteria)
-            # print(cc)
+            print(cc)
         except cv2.error:   # ECCが収束しなかった場合
             print("ECC stopped before convergence")
             continue
 
         aligned = cv2.warpPerspective(sub_shrinkeds[i], M, size_gray[::-1])
 
-        if cc > 0.6:    # うまくマッチングできない画像は除外する
+        if cc > 0.5:    # うまくマッチングできない画像は除外する
             sub_aligneds.append(aligned)
 
     return sub_aligneds
@@ -67,7 +73,7 @@ def detect_overexposed(img):
     img_size = img.shape[:2]
 
     oe_area = np.zeros(img_size, dtype=np.float32)
-    oe_area[dist <= 10] = 1.0
+    oe_area[dist <= 15] = 1.0
     if np.sum(oe_area) == 0:
         return oe_area
     first_dist_mean = np.mean(dist[oe_area == 1.0])

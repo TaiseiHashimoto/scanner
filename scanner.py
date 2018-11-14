@@ -239,10 +239,19 @@ if __name__ == '__main__':
         mainfilename = os.path.join(foldername, "main_big.jpeg")
         subfilenames = glob.glob(foldername + "/sub_[0-9]_big.jpeg")
         datafilename = os.path.join(foldername, "data_big.csv")
+    elif sys.argv[2] == 'demo':
+        foldername = os.path.join("demo", sys.argv[1])
+        mainfilename = os.path.join(foldername, "main.jpeg")
+        subfilenames = glob.glob(foldername + "/sub_[0-9].jpeg")
+        datafilename = os.path.join(foldername, "data.csv")
+
 
     Path(os.path.join(foldername, 'ans.txt')).touch()
     main_color = cv2.imread(mainfilename)
     assert main_color is not None, f"Cannot read {mainfilename}"
+
+    cv2.imshow("original_main", main_color)
+    cv2.waitKey()
 
     intermediates = {}
     main_color = scan(main_color, intermediates)
@@ -250,7 +259,7 @@ if __name__ == '__main__':
         print("scan failed")
         exit(1)
 
-    cv2.imshow("warped_main", main_color)
+    # cv2.imshow("warped_main", main_color)
     cv2.imwrite("warped_main.jpeg", main_color)
     # cv2.imshow("warped_main_gray", main_gray)
     # cv2.waitKey()
@@ -262,30 +271,34 @@ if __name__ == '__main__':
         assert sub_color is not None, f"Cannot read {filename}"
         sub_shrinked = utility.shrink_img(sub_color)
         sub_shrinkeds.append(sub_shrinked)
-    
+        cv2.imshow("sub_img", sub_color)
+        cv2.waitKey()
+
     if len(sub_shrinkeds) > 0:
         blended = blend(main_color, sub_shrinkeds, intermediates)
         if blended is None:
             print('blend failed')
             exit(1)
 
-        cv2.imshow("blended", blended)
+        # cv2.imshow("blended", blended)
         cv2.imwrite("blended.jpeg", blended)
 
-        # scan = np.empty((600, 450*4, 3), dtype=np.uint8)
-        # scan[:, :450] = intermediates['lines']
-        # scan[:, 450:450*2] = intermediates['segments']
-        # scan[:, 450*2:450*3] = intermediates['intersections']
-        # scan[:, 450*3:] = intermediates['detected']
-        # cv2.imshow("scan", scan)
-        # blend = np.empty((600, 450//2*3, 3), dtype=np.uint8)
-        # blend[:600//2, :450//2] = main_color[::2, ::2]
-        # blend[600//2:, :450//2] = intermediates['sub_aligned_1'][::2, ::2]
-        # blend[:600//2, 450//2:450] = intermediates['main_state'][::2, ::2]
-        # blend[600//2:, 450//2:450] = intermediates['sub_state_1'][::2, ::2]
-        # blend[:600//2, 450:] = intermediates['blended_dark'][::2, ::2]
-        # blend[600//2:, 450:] = blended[::2, ::2]
-        # cv2.imshow("blend", blend)
+        scan = np.empty((600, 450*4, 3), dtype=np.uint8)
+        scan[:, :450] = intermediates['lines']
+        scan[:, 450:450*2] = intermediates['segments']
+        scan[:, 450*2:450*3] = intermediates['intersections']
+        scan[:, 450*3:] = intermediates['detected']
+        cv2.imshow("scan", scan)
+        blend = np.empty((600, 450//2*3, 3), dtype=np.uint8)
+        blend[:600//2, :450//2] = main_color[::2, ::2]
+        blend[600//2:, :450//2] = intermediates['sub_aligned_0'][::2, ::2]
+        blend[:600//2, 450//2:450] = intermediates['main_state'][::2, ::2]
+        blend[600//2:, 450//2:450] = intermediates['sub_state_0'][::2, ::2]
+        blend[:600//2, 450:] = intermediates['blended_dark'][::2, ::2]
+        blend[600//2:, 450:] = blended[::2, ::2]
+        cv2.imshow("blend", blend)
+    else:
+        cv2.imshow("detected", main_color)
 
     duration_ms = (cv2.getTickCount() - start) * 1000 / cv2.getTickFrequency()
     print(f"It took {duration_ms} ms.")

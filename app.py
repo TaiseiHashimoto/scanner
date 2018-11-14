@@ -59,6 +59,7 @@ if __name__ == '__main__':
         flag_add_capture = cvui.button(120, 30, '&Add capture')
         flag_blend = cvui.button(100, 30, '&Blend')
         flag_restart = cvui.button(100, 30, '&Restart')
+        flag_retake = cvui.button(100, 30, '&Retake')
         flag_intermediate = cvui.button(180, 30, '&Intermediates')
         flag_quit = cvui.button(100, 30, '&Quit')
         cvui.endRow()
@@ -100,6 +101,11 @@ if __name__ == '__main__':
             sub_imgs = []
             n_subimgs = 0
             state = STATE_START
+
+        if flag_retake:
+            sub_imgs = []
+            n_subimgs = 0
+            state = STATE_MULTI_START
 
         if flag_add_capture:
             if state == STATE_SCANNED or state == STATE_BLENDED:
