@@ -21,8 +21,10 @@ def scan(main_color, intermediates=None):
 
     length_threshold = 20
     distance_threshold = 1.4142
-    canny_th1 = 5.0
-    canny_th2 = 50.0
+    # canny_th1 = 5.0
+    # canny_th2 = 50.0
+    canny_th1 = 1.0
+    canny_th2 = 10
     canny_size = 3
     do_merge = False
     do_merge = False
@@ -39,6 +41,7 @@ def scan(main_color, intermediates=None):
     labels_num = len(np.unique(labels))
     if intermediates is not None:
         intermediates['lines'] = utility.draw_lines(main_gray, lines, labels, labels_num)
+        cv2.imwrite("lines.jpeg", intermediates['lines'])
 
     segments = Segments(lines, labels, labels_num, size_gray)
     print(f"Num of segments: {segments.num} => ", end="")
@@ -46,11 +49,13 @@ def scan(main_color, intermediates=None):
     print(segments.num)
     if intermediates is not None:
         intermediates['segments'] = utility.draw_segments(main_gray, segments)
+        cv2.imwrite("segments.jpeg", intermediates['segments'])
 
     intersections = Intersections(segments, size_gray)
     print(f"Num of intersections: {intersections.num}")
     if intermediates is not None:
         intermediates['intersections'] = utility.draw_intersections(main_gray, intersections)
+        cv2.imwrite("intersections.jpeg", intermediates['intersections'])
     
     df = ml_model.prepare_data(intersections, size_gray)
     scores = ml_model.get_score(df)
@@ -77,7 +82,6 @@ def scan(main_color, intermediates=None):
             len(vertex_rb) >= points_per_section:
             break
 
-    # cv2.waitKey()
     if len(vertex_lt) == 0:
         print("no vertex at left top was found")
         return None
@@ -93,7 +97,7 @@ def scan(main_color, intermediates=None):
 
     idx_lt, idx_rt, idx_lb, idx_rb = utility.get_best_set(intersections, scores, vertex_lt, vertex_rt, vertex_lb, vertex_rb)
 
-    print(f"selected vertexes: ({idx_lt}, {idx_rt}, {idx_lb}, {idx_rb})")
+    # print(f"selected vertexes: ({idx_lt}, {idx_rt}, {idx_lb}, {idx_rb})")
     if intermediates is not None:
         intermediates['detected'] = utility.draw_detected(main_gray, intersections, idx_lt, idx_rt, idx_lb, idx_rb)
 
@@ -114,9 +118,7 @@ def scan(main_color, intermediates=None):
     src_points_color = src_points_gray * scale
     dst_points_color = dst_points_gray * scale
 
-    # M_gray = cv2.getPerspectiveTransform(src_points_gray, dst_points_gray)
     M_color = cv2.getPerspectiveTransform(src_points_color, dst_points_color)
-    # main_gray = cv2.warpPerspective(main_gray, M_gray, size_gray[::-1])
     main_color = cv2.warpPerspective(main_color, M_color, size_color[::-1])
     return main_color
 
@@ -163,12 +165,18 @@ def blend(main_color, sub_colors, intermediates=None):
             intermediates[f"sub_state_{i}"] = utility.draw_score(sub_shrinkeds[i], state)
     sub_states = np.array(sub_states, dtype=np.float32)
 
+    # sub_states_max = np.max(sub_states, axis=0)
     sub_states_max = np.clip(np.max(sub_states, axis=0), 1e-6, 1)
-    main_weight = np.clip((np.tanh((main_state - 0.93) * 15) + 1.0) * 0.5 + (np.tanh((main_state/sub_states_max - 1.0) * 1.0) + 1.0) * 0.3, 1e-6, 1)
+    # 実験的に定めた(非線形性を加える)
+    # main_weight = np.clip((np.tanh((main_state - 0.93) * 15) + 1.0) * 0.5 + (np.tanh((main_state/sub_states_max - 1.0) * 1.0) + 1.0) * 0.3, 1e-6, 1)
+    main_weight = main_state
+    main_weight[(sub_states_max == 1e-6) & (main_weight > 1e-6)] = 1.0   # 他が使えない場合は重み1
 
     sub_weights = []
     for state in sub_states:
+        # 実験的に定めた
         sub_weights.append(np.exp((state - 0.95)*5))
+        # sub_weights.append(state)
     sub_weights = np.array(sub_weights)
     sub_weights_sum = np.sum(sub_weights, axis=0)
     sub_weights[:, sub_weights_sum > 0] /= sub_weights_sum[sub_weights_sum > 0]
@@ -196,7 +204,7 @@ def blend(main_color, sub_colors, intermediates=None):
     # 暗い領域を明るくするため、明るくしてよい余裕を求める
     bright_margin = np.zeros(size_gray, dtype=np.float32)
     for img_v, state in zip(sub_vs, sub_states):
-        bright_margin = np.maximum((img_v - bld_hsv[:, :, 2]) * (np.tanh((state - 0.99) * 15) + 1.0) * 0.3, bright_margin)
+        bright_margin = np.maximum((img_v - bld_hsv[:, :, 2]) * (np.tanh((state - 0.99) * 15) + 1.0) * 0.6, bright_margin)
 
     # ぼかしをかけることで境目を目立たなくさせる
     bright_margin = cv2.blur(bright_margin, (20, 20))
@@ -207,8 +215,9 @@ def blend(main_color, sub_colors, intermediates=None):
     main_weight = cv2.resize(main_weight, size_color[::-1])
     blended = main_color * main_weight[:, :, np.newaxis]
     sub_shrinkeds = np.array(sub_shrinkeds, dtype=np.float32)
-    blend_img = np.sum(sub_shrinkeds * sub_weights[:, :, :, np.newaxis], axis=0)
-    blended = np.clip(blended + blend_img, 0, 255)
+    to_blend = np.sum(sub_shrinkeds * sub_weights[:, :, :, np.newaxis], axis=0)
+    to_blend = cv2.resize(to_blend, size_color[::-1])
+    blended = np.clip(blended + to_blend, 0, 255)
 
     bright_margin = cv2.resize(bright_margin, size_color[::-1])
     blended_hsv = cv2.cvtColor(blended, cv2.COLOR_BGR2HSV)
@@ -237,7 +246,7 @@ if __name__ == '__main__':
 
     intermediates = {}
     main_color = scan(main_color, intermediates)
-    if not main_color:
+    if main_color is None:
         print("scan failed")
         exit(1)
 
@@ -245,6 +254,7 @@ if __name__ == '__main__':
     cv2.imwrite("warped_main.jpeg", main_color)
     # cv2.imshow("warped_main_gray", main_gray)
     # cv2.waitKey()
+    # cv2.imwrite("lines.jpeg", intermediates['lines'])
 
     sub_shrinkeds = []
     for filename in subfilenames:
@@ -253,13 +263,29 @@ if __name__ == '__main__':
         sub_shrinked = utility.shrink_img(sub_color)
         sub_shrinkeds.append(sub_shrinked)
     
-    blended = blend(main_color, sub_shrinkeds, intermediates)
-    if not blended:
-        print('blend failed')
-        exit(1)
+    if len(sub_shrinkeds) > 0:
+        blended = blend(main_color, sub_shrinkeds, intermediates)
+        if blended is None:
+            print('blend failed')
+            exit(1)
 
-    cv2.imshow("blended", blended)
-    cv2.imwrite("blended.jpeg", blended)
+        cv2.imshow("blended", blended)
+        cv2.imwrite("blended.jpeg", blended)
+
+        # scan = np.empty((600, 450*4, 3), dtype=np.uint8)
+        # scan[:, :450] = intermediates['lines']
+        # scan[:, 450:450*2] = intermediates['segments']
+        # scan[:, 450*2:450*3] = intermediates['intersections']
+        # scan[:, 450*3:] = intermediates['detected']
+        # cv2.imshow("scan", scan)
+        # blend = np.empty((600, 450//2*3, 3), dtype=np.uint8)
+        # blend[:600//2, :450//2] = main_color[::2, ::2]
+        # blend[600//2:, :450//2] = intermediates['sub_aligned_1'][::2, ::2]
+        # blend[:600//2, 450//2:450] = intermediates['main_state'][::2, ::2]
+        # blend[600//2:, 450//2:450] = intermediates['sub_state_1'][::2, ::2]
+        # blend[:600//2, 450:] = intermediates['blended_dark'][::2, ::2]
+        # blend[600//2:, 450:] = blended[::2, ::2]
+        # cv2.imshow("blend", blend)
 
     duration_ms = (cv2.getTickCount() - start) * 1000 / cv2.getTickFrequency()
     print(f"It took {duration_ms} ms.")

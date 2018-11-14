@@ -62,15 +62,19 @@ def draw_detected(img, intersections, idx_lt, idx_rt, idx_lb, idx_rb):
     pnt_rt = intersections.cross_pnt[idx_rt]
     pnt_lb = intersections.cross_pnt[idx_lb]
     pnt_rb = intersections.cross_pnt[idx_rb]
-    img = cv2.circle(img, (pnt_lt[0], pnt_lt[1]), 3, (0, 0, 255), -1)
-    img = cv2.circle(img, (pnt_rt[0], pnt_rt[1]), 3, (0, 0, 255), -1)
-    img = cv2.circle(img, (pnt_lb[0], pnt_lb[1]), 3, (0, 0, 255), -1)
-    img = cv2.circle(img, (pnt_rb[0], pnt_rb[1]), 3, (0, 0, 255), -1)
+    img = cv2.circle(img, (pnt_lt[0], pnt_lt[1]), 5, (0, 0, 255), -1)
+    img = cv2.circle(img, (pnt_rt[0], pnt_rt[1]), 5, (0, 0, 255), -1)
+    img = cv2.circle(img, (pnt_lb[0], pnt_lb[1]), 5, (0, 0, 255), -1)
+    img = cv2.circle(img, (pnt_rb[0], pnt_rb[1]), 5, (0, 0, 255), -1)
     return img
 
 def draw_score(img, score):
     img = img.copy()
     img[:, :, 2] = np.clip(score * 255, 0, 255)
+    return img
+
+def draw_oearea(oe_area):
+    img = (oe_area * 255).astype(np.uint8)
     return img
 
 def shrink_img(img, dst_size=(600, 600)):

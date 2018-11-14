@@ -4,22 +4,8 @@ import numpy as np
 import utility
 import scanner
 
-# def shrink_img(img, dst_size=(600, 600)):
-#     org_size = img.shape
-#     if org_size[0] <= dst_size[0] and org_size[1] <= dst_size[1]:
-#         return img
-
-#     ratio = org_size[0] / org_size[1]
-#     if dst_size[0] / ratio <= dst_size[1]:
-#         dst_size = (dst_size[0], int(dst_size[0]/ratio))
-#     else:
-#         dst_size = (int(dst_size[1]*ratio), dst_size[1])
-#     img = cv2.resize(img, dst_size[::-1], cv2.INTER_AREA)
-#     return img
-
 def read_webcam(camera):
     cap = camera.read()[1].transpose(1, 0, 2)[:, ::-1]    # 90度回転
-    # cap = 
     return cap
 
 if __name__ == '__main__':
@@ -28,7 +14,6 @@ if __name__ == '__main__':
     camera = cv2.VideoCapture(0)
     camera.set(cv2.CAP_PROP_FRAME_WIDTH, 960)
     camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
-    print(camera.get(cv2.CAP_PROP_FRAME_WIDTH), camera.get(cv2.CAP_PROP_FRAME_HEIGHT))
     assert camera.isOpened(), "Cannot open camera"
 
     # 画像の表示サイズを確定する
@@ -36,7 +21,7 @@ if __name__ == '__main__':
     img_size = cap.shape
     window_size = (img_size[0] + 65, img_size[1] * 2)
 
-    WINDOW_NAME = "easy scanner"
+    WINDOW_NAME = "Easy Scanner"
     cvui.init(WINDOW_NAME, 20)
 
     STATE_START = 0
@@ -72,13 +57,14 @@ if __name__ == '__main__':
         flag_add_capture = cvui.button(120, 30, '&Add capture')
         flag_blend = cvui.button(100, 30, '&Blend')
         flag_restart = cvui.button(100, 30, '&Restart')
-        flag_show_intermediate = cvui.button(180, 30, '&Show intermediates')
+        flag_intermediate = cvui.button(180, 30, '&Intermediates')
         flag_quit = cvui.button(100, 30, '&Quit')
         cvui.endRow()
 
         if flag_capture:
             if state == STATE_START:
                 main_img = img1
+                cv2.imwrite("original.jpeg", main_img)
                 state = STATE_CAPTURED
             elif state == STATE_MULTI_START:
                 sub_imgs.append(img1)
@@ -92,6 +78,7 @@ if __name__ == '__main__':
                 main_img = scanner.scan(main_img, intermediates)
                 if main_img is not None:
                     img2 = main_img
+                    cv2.imwrite("detected.jpeg", main_img)
                     state = STATE_SCANNED
                 else:
                     print("scan failed")
@@ -102,6 +89,7 @@ if __name__ == '__main__':
             if STATE_MULTI_CAPTURED:
                 blended = scanner.blend(main_img, sub_imgs, intermediates)
                 if blended is not None:
+                    cv2.imwrite("blended.jpeg", blended)
                     img2 = blended.copy()
                     state = STATE_BLENDED
 
@@ -117,7 +105,7 @@ if __name__ == '__main__':
             else:
                 print("Please scan first.")
 
-        if flag_show_intermediate:
+        if flag_intermediate:
         	if 'lines' in intermediates:
 	        	scan = np.empty((img_size[0], img_size[1]*4, 3), dtype=np.uint8)
 	        	scan[:, :img_size[1]] = intermediates['lines']
@@ -141,7 +129,7 @@ if __name__ == '__main__':
             break
 
         cvui.text(window, 150, 40, "orginal image", 0.6)
-        cvui.text(window, img_size[1] + 150, 40, "scanned image", 0.6)
+        cvui.text(window, img_size[1] + 150, 40, "processed image", 0.6)
 
         cvui.image(window, 0, 65, img1)
         cvui.image(window, img_size[1], 65, img2)

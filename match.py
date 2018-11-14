@@ -23,12 +23,15 @@ def align(main_gray, sub_colors):
         kps, dscs = akaze.detectAndCompute(sub_grays[i], None)
         matches = bf.match(main_dscs, dscs)
         matches.sort(key=lambda m: m.distance)
-        num_good_matches = min(int(len(matches) * 0.5), 100)
+        num_good_matches = min(int(len(matches) * 0.3), 100)
         if num_good_matches < 10: num_good_matches = len(matches)
         assert num_good_matches >= 4, f"Num of matches is too low. ({num_good_matches})"
-        print(f"Num of matches: {len(matches)}")
-        print(f"Num of good matches: {num_good_matches}")
+        # print(f"Num of matches: {len(matches)}")
+        # print(f"Num of good matches: {num_good_matches}")
         matches = matches[:num_good_matches]
+
+        tmp = cv2.drawMatches(main_gray, main_kps, sub_grays[i], kps, matches, None)
+        cv2.imwrite("matches.jpeg", tmp)
 
         main_pnts = []
         pnts = []
@@ -46,6 +49,7 @@ def align(main_gray, sub_colors):
         criteria = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, number_of_iterations,  termination_eps)
         try:
             cc, M = cv2.findTransformECC(sub_grays[i], main_gray, M, cv2.MOTION_HOMOGRAPHY, criteria)
+            # print(cc)
         except cv2.error:   # ECCが収束しなかった場合
             print("ECC stopped before convergence")
             continue
@@ -88,5 +92,11 @@ def detect_overexposed(img):
 
     oe_area = cv2.dilate(oe_area, np.ones((50, 50)))  # 白飛び領域を十分に捉える
     oe_area = cv2.blur(oe_area, (50, 50))  # 境界をぼかす
+
+    # tmp = utility.draw_oearea(oe_area)
+    # cv2.imwrite("oe_area.jpeg", tmp)
+    # cv2.imshow("oe_area", tmp)
+    # cv2.waitKey()
+    # exit(0)
 
     return oe_area
