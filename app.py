@@ -3,6 +3,7 @@ from cvui import cvui
 import numpy as np
 import utility
 import scanner
+import sys
 
 def read_webcam(camera):
     cap = camera.read()[1].transpose(1, 0, 2)[:, ::-1]    # 90度回転
@@ -11,7 +12,8 @@ def read_webcam(camera):
 if __name__ == '__main__':
     dst_size = (600, 450)
 
-    camera = cv2.VideoCapture(0)
+    camera_id = sys.argv[1] if len(sys.argv) > 1 else 0
+    camera = cv2.VideoCapture(int(camera_id))
     camera.set(cv2.CAP_PROP_FRAME_WIDTH, 960)
     camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
     assert camera.isOpened(), "Cannot open camera"
